@@ -37,6 +37,7 @@ export function buildCollectorJson(
     authentication: config.authentication,
     timeout: config.timeout,
     rejectUnauthorized: config.rejectUnauthorized,
+    discovery: { discoverType: 'none' },
   };
 
   if (config.disableTimeFilter) conf.disableTimeFilter = true;

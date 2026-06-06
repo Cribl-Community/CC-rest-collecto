@@ -50,7 +50,7 @@ Always output the final configuration as a fenced JSON code block: \`\`\`json ..
   "collector": {
     "type": "rest",
     "destructive": false,
-    "conf": {
+      "conf": {
       "collectUrl": "'https://api.example.com/endpoint'",
       "collectMethod": "get",
       "authentication": "none",
@@ -58,7 +58,8 @@ Always output the final configuration as a fenced JSON code block: \`\`\`json ..
       "rejectUnauthorized": true,
       "collectRequestHeaders": [{"name": "Header-Name", "value": "'value'"}],
       "collectRequestParams": [{"name": "param", "value": "'value'"}],
-      "pagination": {"type": "none"}
+      "pagination": {"type": "none"},
+      "discovery": {"discoverType": "none"}
     }
   },
   "input": {
@@ -72,9 +73,10 @@ Always output the final configuration as a fenced JSON code block: \`\`\`json ..
 
 - **collectUrl** must be a JavaScript expression. Use single quotes for string literals: \`'https://api.example.com/path'\`
 - For URLs with dynamic segments, use template literals: \`\`https://api.example.com/users/\${userId}\`\`
-- **Header and param values** must be JS expressions — quoted strings or \`kv.secretName\` for secrets stored in Cribl KV
-- For **Bearer token** auth, use \`authentication: "none"\` and add an Authorization header: \`"'Bearer ' + kv.apiToken"\`
-- For **API key** in header, add a header with the key name and value \`kv.apiKeyName\`
+- **Header and param values** must be JS expressions — quoted strings or \`C.Secret("secretName")\` for Cribl-managed secrets
+- For **Bearer token** auth, use \`authentication: "none"\` and add an Authorization header: \`"'Bearer ' + C.Secret('apiToken')"\`
+- For **API key** in header, add a header with the key name and value \`C.Secret("apiKeyName")\`
+- **Never** use \`kv.*\` for collector credentials — always use \`C.Secret("name")\`. **Never** append \`.get\` or any other suffix to \`C.Secret()\`.
 - For **basic auth**, use \`authentication: "basic"\` with \`username\` and \`password\` fields in conf
 - **Pagination types**: \`none\`, \`response_body\`, \`response_header\`, \`response_header_link\`, \`request_offset\`, \`request_page\`
   - GitHub uses \`response_header_link\` (Link header)
