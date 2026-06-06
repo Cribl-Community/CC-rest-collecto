@@ -209,7 +209,7 @@ function MessageBubble({
 }
 
 export function ChatPage() {
-  const { setCollectorConfig, setScheduleConfig, collectorConfig, scheduleConfig } = useWizard();
+  const { setCollectorConfig, setScheduleConfig, setSelectedOperation, collectorConfig, scheduleConfig } = useWizard();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -329,10 +329,21 @@ export function ChatPage() {
     if (!result) return;
 
     const { collector, schedule } = result;
-    setCollectorConfig({ ...collectorConfig, ...collector } as CollectorConfig);
+    const mergedCollector = { ...collectorConfig, ...collector } as CollectorConfig;
+    setCollectorConfig(mergedCollector);
     setScheduleConfig({ ...scheduleConfig, ...schedule } as ScheduleConfig);
 
-    // Synthesize a minimal selectedOperation so configure page doesn't redirect
+    // Synthesize a minimal selectedOperation so CollectorConfigPage doesn't redirect
+    setSelectedOperation({
+      method: (mergedCollector.collectMethod ?? 'get').toUpperCase(),
+      path: mergedCollector.collectUrl ?? '',
+      operationId: mergedCollector.id,
+      summary: mergedCollector.description || undefined,
+      tags: [],
+      parameters: [],
+      servers: [],
+    });
+
     navigate('/configure');
   }
 
