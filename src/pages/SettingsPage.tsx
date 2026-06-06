@@ -22,7 +22,7 @@ export async function getStoredModel(): Promise<string> {
   try {
     const r = await fetch(kvUrl(KV_MODEL_PATH));
     if (!r.ok) return DEFAULT_MODEL;
-    const val = await r.json();
+    const val = JSON.parse(await r.text());
     return typeof val === 'string' ? val : DEFAULT_MODEL;
   } catch {
     return DEFAULT_MODEL;
@@ -64,12 +64,12 @@ export function SettingsPage() {
       const [keyRes, modelRes] = await Promise.all([
         fetch(kvUrl(KV_KEY_PATH), {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'text/plain' },
           body: JSON.stringify(keyInput.trim()),
         }),
         fetch(kvUrl(KV_MODEL_PATH), {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'text/plain' },
           body: JSON.stringify(model),
         }),
       ]);
@@ -91,7 +91,7 @@ export function SettingsPage() {
     try {
       await fetch(kvUrl(KV_MODEL_PATH), {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(model),
       });
       setSaveStatus('success');
