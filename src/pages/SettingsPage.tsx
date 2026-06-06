@@ -22,8 +22,14 @@ export async function getStoredModel(): Promise<string> {
   try {
     const r = await fetch(kvUrl(KV_MODEL_PATH));
     if (!r.ok) return DEFAULT_MODEL;
-    const val = JSON.parse(await r.text());
-    return typeof val === 'string' ? val : DEFAULT_MODEL;
+    const text = (await r.text()).trim();
+    // Normalize: handle legacy values that were stored JSON-encoded ("claude-sonnet-4-5")
+    try {
+      const parsed = JSON.parse(text);
+      return typeof parsed === 'string' ? parsed : DEFAULT_MODEL;
+    } catch {
+      return text || DEFAULT_MODEL;
+    }
   } catch {
     return DEFAULT_MODEL;
   }
@@ -61,16 +67,17 @@ export function SettingsPage() {
     setSaving(true);
     setSaveStatus('idle');
     try {
+      const keyBody = keyInput.trim();
       const [keyRes, modelRes] = await Promise.all([
         fetch(kvUrl(KV_KEY_PATH), {
           method: 'PUT',
           headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify(keyInput.trim()),
+          body: keyBody,
         }),
         fetch(kvUrl(KV_MODEL_PATH), {
           method: 'PUT',
           headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify(model),
+          body: model,
         }),
       ]);
       if (!keyRes.ok || !modelRes.ok) throw new Error('Failed to save settings.');
@@ -92,7 +99,7 @@ export function SettingsPage() {
       await fetch(kvUrl(KV_MODEL_PATH), {
         method: 'PUT',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(model),
+        body: model,
       });
       setSaveStatus('success');
       setSaveMessage('Model preference saved.');
