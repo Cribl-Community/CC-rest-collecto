@@ -44,6 +44,16 @@ export interface CollectorConfig {
   requestHeaders: CollectorParam[];
   requestParams: CollectorParam[];
   paginationType: 'none' | 'response_body' | 'response_header' | 'response_header_link' | 'request_offset' | 'request_page';
+  paginationMaxPages: number;
+  paginationAttribute: string;
+  paginationNextRelation: string;
+  paginationOffsetField: string;
+  paginationLimitField: string;
+  paginationLimit: number;
+  paginationPageField: string;
+  paginationSizeField: string;
+  paginationSize: number;
+  paginationZeroIndexed: boolean;
   timeout: number;
   rejectUnauthorized: boolean;
   disableTimeFilter: boolean;
@@ -88,6 +98,16 @@ const defaultCollectorConfig: CollectorConfig = {
   requestHeaders: [],
   requestParams: [],
   paginationType: 'none',
+  paginationMaxPages: 100,
+  paginationAttribute: '',
+  paginationNextRelation: 'next',
+  paginationOffsetField: '',
+  paginationLimitField: '',
+  paginationLimit: 100,
+  paginationPageField: '',
+  paginationSizeField: '',
+  paginationSize: 100,
+  paginationZeroIndexed: false,
   timeout: 30,
   rejectUnauthorized: true,
   disableTimeFilter: false,

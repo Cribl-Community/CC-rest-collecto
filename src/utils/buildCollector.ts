@@ -56,7 +56,33 @@ export function buildCollectorJson(
   }
 
   if (config.paginationType !== 'none') {
-    conf.pagination = { type: config.paginationType };
+    const p: Record<string, unknown> = { type: config.paginationType };
+    switch (config.paginationType) {
+      case 'response_body':
+      case 'response_header':
+        p.attribute = config.paginationAttribute;
+        p.maxPages = config.paginationMaxPages;
+        break;
+      case 'response_header_link':
+        p.nextRelationAttribute = config.paginationNextRelation || 'next';
+        p.maxPages = config.paginationMaxPages;
+        break;
+      case 'request_offset':
+        p.offsetField = config.paginationOffsetField;
+        p.limitField = config.paginationLimitField;
+        p.limit = config.paginationLimit;
+        p.maxPages = config.paginationMaxPages;
+        p.zeroIndexed = config.paginationZeroIndexed;
+        break;
+      case 'request_page':
+        p.pageField = config.paginationPageField;
+        p.sizeField = config.paginationSizeField;
+        p.size = config.paginationSize;
+        p.maxPages = config.paginationMaxPages;
+        p.zeroIndexed = config.paginationZeroIndexed;
+        break;
+    }
+    conf.pagination = p;
   }
 
   if (config.authentication === 'basic' || config.authentication === 'basicSecret') {

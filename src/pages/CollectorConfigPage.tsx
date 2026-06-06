@@ -156,6 +156,113 @@ export function CollectorConfigPage() {
             <option value="request_page">Request Page</option>
           </FormField>
         </div>
+
+        {cfg.paginationType !== 'none' && (
+          <div className="pagination-fields">
+            <FormField
+              label="Max Pages"
+              type="number"
+              value={cfg.paginationMaxPages}
+              min={1}
+              onChange={e => update('paginationMaxPages', Number(e.target.value))}
+              hint="Maximum number of pages to retrieve per collection task"
+            />
+
+            {(cfg.paginationType === 'response_body' || cfg.paginationType === 'response_header') && (
+              <FormField
+                label="Attribute"
+                value={cfg.paginationAttribute}
+                onChange={e => update('paginationAttribute', e.target.value)}
+                placeholder="next_cursor"
+                hint="Name of the response attribute containing the next page token or URL"
+              />
+            )}
+
+            {cfg.paginationType === 'response_header_link' && (
+              <FormField
+                label="Next Relation Attribute"
+                value={cfg.paginationNextRelation}
+                onChange={e => update('paginationNextRelation', e.target.value)}
+                placeholder="next"
+                hint='Relation name in the Link header for the next page (usually "next")'
+              />
+            )}
+
+            {cfg.paginationType === 'request_offset' && (
+              <div className="form-grid form-grid--2">
+                <FormField
+                  label="Offset Field"
+                  value={cfg.paginationOffsetField}
+                  onChange={e => update('paginationOffsetField', e.target.value)}
+                  placeholder="offset"
+                  hint="Query param name for the start index"
+                />
+                <FormField
+                  label="Limit Field"
+                  value={cfg.paginationLimitField}
+                  onChange={e => update('paginationLimitField', e.target.value)}
+                  placeholder="limit"
+                  hint="Query param name for records per page"
+                />
+                <FormField
+                  label="Limit (records per page)"
+                  type="number"
+                  value={cfg.paginationLimit}
+                  min={1}
+                  onChange={e => update('paginationLimit', Number(e.target.value))}
+                />
+                <div className="form-field">
+                  <label className="form-label">Options</label>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={cfg.paginationZeroIndexed}
+                      onChange={e => update('paginationZeroIndexed', e.target.checked)}
+                    />
+                    Zero-indexed (first page = 0)
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {cfg.paginationType === 'request_page' && (
+              <div className="form-grid form-grid--2">
+                <FormField
+                  label="Page Field"
+                  value={cfg.paginationPageField}
+                  onChange={e => update('paginationPageField', e.target.value)}
+                  placeholder="page"
+                  hint="Query param name for the page number"
+                />
+                <FormField
+                  label="Size Field"
+                  value={cfg.paginationSizeField}
+                  onChange={e => update('paginationSizeField', e.target.value)}
+                  placeholder="per_page"
+                  hint="Query param name for page size"
+                />
+                <FormField
+                  label="Page Size"
+                  type="number"
+                  value={cfg.paginationSize}
+                  min={1}
+                  onChange={e => update('paginationSize', Number(e.target.value))}
+                />
+                <div className="form-field">
+                  <label className="form-label">Options</label>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={cfg.paginationZeroIndexed}
+                      onChange={e => update('paginationZeroIndexed', e.target.checked)}
+                    />
+                    Zero-indexed (first page = 0)
+                  </label>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="form-section">

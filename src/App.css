@@ -368,6 +368,22 @@ select.form-control {
   cursor: pointer;
 }
 
+/* ─── Pagination Sub-fields ──────────────────────────────────────────────────── */
+.pagination-fields {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--surface-raised, rgba(255,255,255,0.04));
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pagination-fields .form-grid {
+  margin-top: 0;
+}
+
 /* ─── Param Rows ─────────────────────────────────────────────────────────────── */
 .param-rows {
   display: flex;
