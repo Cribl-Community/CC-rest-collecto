@@ -105,12 +105,16 @@ function Layout() {
     <div className="app-shell">
       <header className="app-header">
         <div className="app-logo">
-          <img src="/icon.png" width="28" height="28" alt="" style={{ borderRadius: 6 }} />
           <span>REST Collecto</span>
         </div>
-        {isWizard && <Stepper currentPath={location.pathname} />}
         <HeaderNav />
       </header>
+      {isWizard && (
+        <div className="app-subheader">
+          <img src="/icon.png" className="app-subheader-icon" alt="REST Collecto" />
+          <Stepper currentPath={location.pathname} />
+        </div>
+      )}
       <main className="app-main">
         <Routes>
           <Route path="/projects" element={<ProjectsPage />} />
