@@ -4,12 +4,16 @@ import { useWizard } from '../context/WizardContext';
 import { parseSpec } from '../utils/parseSpec';
 import type { ParsedSpec } from '../context/WizardContext';
 
+type StartMode = 'choose' | 'spec';
+
 type LoadSource = { kind: 'file'; name: string; size: number } | { kind: 'url'; url: string };
 
 export function SpecInputPage() {
   const { rawSpec, setRawSpec, setParsedSpec, setPreserveConfig } = useWizard();
   const [searchParams] = useSearchParams();
   const preserve = searchParams.get('preserve') === 'true';
+  // Skip the mode chooser when coming back via Update Spec (preserve mode)
+  const [mode, setMode] = useState<StartMode>(preserve ? 'spec' : 'choose');
 
   // paste text (small specs)
   const [pasteText, setPasteText] = useState(rawSpec);
@@ -127,10 +131,63 @@ export function SpecInputPage() {
     { label: 'GitHub REST API (~12 MB)', url: 'https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json' },
   ];
 
+  if (mode === 'choose') {
+    return (
+      <div className="page">
+        <div className="page-header">
+          <h2 className="page-title">New Project</h2>
+          <p className="page-subtitle">How would you like to build your REST Collector?</p>
+        </div>
+        <div className="start-mode-cards">
+          <button
+            type="button"
+            className="start-mode-card"
+            onClick={() => setMode('spec')}
+          >
+            <div className="start-mode-card-icon">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                <rect x="6" y="4" width="28" height="32" rx="3" stroke="currentColor" strokeWidth="2"/>
+                <path d="M12 13h16M12 19h16M12 25h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <div className="start-mode-card-body">
+              <strong>OpenAPI Spec</strong>
+              <span>Import from a URL, file upload, or paste. Endpoints and parameters are extracted automatically.</span>
+            </div>
+            <div className="start-mode-card-arrow">→</div>
+          </button>
+
+          <button
+            type="button"
+            className="start-mode-card start-mode-card--ai"
+            onClick={() => navigate('/chat')}
+          >
+            <div className="start-mode-card-icon">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                <circle cx="20" cy="20" r="17" stroke="currentColor" strokeWidth="2"/>
+                <path d="M13 20c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="#00C58E" strokeWidth="2" strokeLinecap="round"/>
+                <circle cx="20" cy="20" r="3" fill="#00C58E"/>
+                <path d="M20 23v5" stroke="#00C58E" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <div className="start-mode-card-body">
+              <strong>AI Builder</strong>
+              <span>Describe the API you want to collect in plain English. Claude generates the collector config for you.</span>
+            </div>
+            <div className="start-mode-card-arrow">→</div>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="page">
       <div className="page-header">
-        <h2 className="page-title">Import OpenAPI Spec</h2>
+        <button type="button" className="btn btn--ghost btn--sm" onClick={() => setMode('choose')}>
+          ← Back
+        </button>
+        <h2 className="page-title" style={{ marginTop: '0.75rem' }}>Import OpenAPI Spec</h2>
         <p className="page-subtitle">
           Load an OpenAPI 2.x or 3.x spec (JSON or YAML) by URL, file, or paste.
         </p>
