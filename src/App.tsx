@@ -58,7 +58,7 @@ function HeaderNav() {
       <button
         type="button"
         className={`header-nav-btn${isProjects ? ' header-nav-btn--active' : ''}`}
-        onClick={() => navigate('/projects')}
+        onClick={() => { if (!isProjects) navigate('/projects'); }}
         title="Projects"
       >
         <ProjectsIcon />
@@ -67,7 +67,7 @@ function HeaderNav() {
       <button
         type="button"
         className={`header-nav-btn${isChat ? ' header-nav-btn--active' : ''}`}
-        onClick={() => navigate('/chat')}
+        onClick={() => { if (!isChat) navigate('/chat'); }}
         title="AI Collector Builder"
       >
         <ChatIcon />
@@ -76,7 +76,7 @@ function HeaderNav() {
       <button
         type="button"
         className={`header-nav-btn${isSettings ? ' header-nav-btn--active' : ''}`}
-        onClick={() => navigate('/settings')}
+        onClick={() => { if (!isSettings) navigate('/settings'); }}
         title="Settings"
       >
         <SettingsIcon />
