@@ -229,8 +229,13 @@ export function ChatPage() {
   } = useWizard();
   const navigate = useNavigate();
   const messages = chatMessages;
+  // Keep a ref to the latest messages so async streaming callbacks never see stale closures
+  const messagesRef = useRef<Message[]>(chatMessages);
+  messagesRef.current = chatMessages;
   const setMessages = (msgs: Message[] | ((prev: Message[]) => Message[])) => {
-    setChatMessages(typeof msgs === 'function' ? msgs(chatMessages) : msgs);
+    const next = typeof msgs === 'function' ? msgs(messagesRef.current) : msgs;
+    messagesRef.current = next;
+    setChatMessages(next);
   };
   const input = chatDraft;
   const setInput = setChatDraft;
