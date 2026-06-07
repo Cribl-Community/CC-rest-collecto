@@ -105,10 +105,7 @@ function Layout() {
     <div className="app-shell">
       <header className="app-header">
         <div className="app-logo">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="11" stroke="#00C58E" strokeWidth="2"/>
-            <path d="M7 12h10M12 7l5 5-5 5" stroke="#00C58E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
+          <img src="/icon.png" width="28" height="28" alt="" style={{ borderRadius: 6 }} />
           <span>REST Collecto</span>
         </div>
         {isWizard && <Stepper currentPath={location.pathname} />}
