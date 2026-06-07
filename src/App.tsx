@@ -111,10 +111,13 @@ function Layout() {
       </header>
       {isWizard && (
         <div className="app-subheader">
-          <img src="/icon.png" className="app-subheader-icon" alt="REST Collecto" />
           <Stepper currentPath={location.pathname} />
         </div>
       )}
+      <div className="app-main-wrapper">
+        {isWizard && (
+          <img src="/icon.png" className="app-wizard-icon" alt="REST Collecto" />
+        )}
       <main className="app-main">
         <Routes>
           <Route path="/projects" element={<ProjectsPage />} />
@@ -127,6 +130,7 @@ function Layout() {
           <Route path="*" element={<Navigate to="/projects" replace />} />
         </Routes>
       </main>
+      </div>
     </div>
   );
 }
