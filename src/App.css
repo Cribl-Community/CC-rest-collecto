@@ -109,29 +109,28 @@ code {
   z-index: 1;
 }
 
-/* Show when gutter fits 120px icon (gutter > 144px → vw > 1188px) */
+/* Use the smaller of the two content widths (860px projects, 900px wizard)
+   so the icon stays in the gutter on both pages */
 @media (min-width: 1200px) {
   .app-wizard-icon {
     display: block;
-    left: calc((100% - 900px) / 2 - 120px - 1.5rem);
+    left: calc((100% - 860px) / 2 - 120px - 1.5rem);
     width: 120px;
     height: 120px;
   }
 }
 
-/* Medium when gutter fits 240px icon (gutter > 264px → vw > 1428px) */
 @media (min-width: 1440px) {
   .app-wizard-icon {
-    left: calc((100% - 900px) / 2 - 240px - 1.5rem);
+    left: calc((100% - 860px) / 2 - 240px - 1.5rem);
     width: 240px;
     height: 240px;
   }
 }
 
-/* Large when gutter fits 336px icon (gutter > 360px → vw > 1620px) */
 @media (min-width: 1640px) {
   .app-wizard-icon {
-    left: calc((100% - 900px) / 2 - 336px - 1.5rem);
+    left: calc((100% - 860px) / 2 - 336px - 1.5rem);
     width: 336px;
     height: 336px;
   }

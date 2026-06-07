@@ -88,6 +88,7 @@ function HeaderNav() {
 function Layout() {
   const location = useLocation();
   const isWizard = WIZARD_PATHS.some(p => location.pathname.startsWith(p));
+  const isProjects = location.pathname.startsWith('/projects');
   const isChat = location.pathname.startsWith('/chat');
 
   if (isChat) {
@@ -115,7 +116,7 @@ function Layout() {
         </div>
       )}
       <div className="app-main-wrapper">
-        {isWizard && (
+        {(isWizard || isProjects) && (
           <img src="/icon.png" className="app-wizard-icon" alt="REST Collecto" />
         )}
       <main className="app-main">

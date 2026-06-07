@@ -337,6 +337,8 @@ export function ChatPage() {
           } catch { /* skip malformed events */ }
         }
       }
+      // Auto-save project after each completed response
+      autoSaveProject(messagesRef.current);
     } catch (e) {
       if ((e as Error).name === 'AbortError') return;
       setError((e as Error).message);
@@ -345,6 +347,24 @@ export function ChatPage() {
       setStreaming(false);
       abortRef.current = null;
     }
+  }
+
+  async function autoSaveProject(currentMessages: Message[]) {
+    try {
+      const name = deriveProjectName(collectorConfig.id, parsedSpec?.title ?? '');
+      const saved = await saveProject({
+        id: currentProjectId ?? undefined,
+        createdAt: undefined,
+        name,
+        updatedAt: new Date().toISOString(),
+        parsedSpec: parsedSpec ?? { title: name, version: '', servers: [], operations: [] },
+        selectedOperation: null,
+        collectorConfig,
+        scheduleConfig,
+        chatMessages: currentMessages,
+      });
+      setCurrentProjectId(saved.id);
+    } catch { /* silent — manual Save button is the fallback */ }
   }
 
   function handleStop() {
