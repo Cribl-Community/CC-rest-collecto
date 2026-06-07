@@ -109,7 +109,7 @@ code {
   z-index: 1;
 }
 
-/* Show at medium width with a smaller size */
+/* Show when gutter fits 160px icon (gutter = (vw-900)/2 > 184px → vw > 1268px) */
 @media (min-width: 1280px) {
   .app-wizard-icon {
     display: block;
@@ -119,12 +119,21 @@ code {
   }
 }
 
-/* Full size only when the gutter is wide enough */
-@media (min-width: 1500px) {
+/* 2x size when gutter fits 320px icon (gutter > 344px → vw > 1588px) */
+@media (min-width: 1600px) {
   .app-wizard-icon {
-    left: calc((100% - 900px) / 2 - 224px - 1.5rem);
-    width: 224px;
-    height: 224px;
+    left: calc((100% - 900px) / 2 - 320px - 1.5rem);
+    width: 320px;
+    height: 320px;
+  }
+}
+
+/* 2x again when gutter fits 448px icon (gutter > 472px → vw > 1844px) */
+@media (min-width: 1900px) {
+  .app-wizard-icon {
+    left: calc((100% - 900px) / 2 - 448px - 1.5rem);
+    width: 448px;
+    height: 448px;
   }
 }
 
