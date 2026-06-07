@@ -32,6 +32,10 @@ function resolveRef(spec: AnyObj, ref: string): AnyObj {
 
 function normalizeParam(spec: AnyObj, raw: AnyObj): ParsedParameter {
   const p: AnyObj = raw.$ref ? resolveRef(spec, raw.$ref as string) : raw;
+  // OpenAPI 3: enums live in p.schema.enum; OpenAPI 2: top-level p.enum
+  const enumValues: string[] | undefined =
+    (Array.isArray(p.schema?.enum) ? p.schema.enum : undefined) ??
+    (Array.isArray(p.enum) ? p.enum : undefined);
   return {
     name: p.name || '',
     in: p.in || 'query',
@@ -39,6 +43,7 @@ function normalizeParam(spec: AnyObj, raw: AnyObj): ParsedParameter {
     description: p.description,
     schema: p.schema || (p.type ? { type: p.type, example: p.example } : undefined),
     example: p.example ?? p.schema?.example,
+    enum: enumValues,
   };
 }
 

@@ -29,11 +29,11 @@ export function EndpointSelectPage() {
 
     const requestHeaders = op.parameters
       .filter(p => p.in === 'header')
-      .map(p => ({ name: p.name, value: p.example ? `'${p.example}'` : '' }));
+      .map(p => ({ name: p.name, value: p.example ? `'${p.example}'` : '', enum: p.enum }));
 
     const requestParams = op.parameters
       .filter(p => p.in === 'query')
-      .map(p => ({ name: p.name, value: p.example ? `'${p.example}'` : '' }));
+      .map(p => ({ name: p.name, value: p.example ? `'${p.example}'` : '', enum: p.enum }));
 
     // Sanitize id from operationId or path
     const rawId = op.operationId || op.path.replace(/[^a-zA-Z0-9_-]/g, '-').replace(/^-+|-+$/g, '');

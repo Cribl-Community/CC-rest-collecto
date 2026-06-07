@@ -36,13 +36,27 @@ function ParamRows({
             onChange={e => update(i, 'name', e.target.value)}
             aria-label={`Parameter ${i + 1} name`}
           />
-          <input
-            className="form-control param-value"
-            placeholder={valuePlaceholder ?? "'value'"}
-            value={row.value}
-            onChange={e => update(i, 'value', e.target.value)}
-            aria-label={`Parameter ${i + 1} value`}
-          />
+          {row.enum && row.enum.length > 0 ? (
+            <select
+              className="form-control param-value"
+              value={row.value}
+              onChange={e => update(i, 'value', e.target.value)}
+              aria-label={`Parameter ${i + 1} value`}
+            >
+              <option value="">— select —</option>
+              {row.enum.map(v => (
+                <option key={v} value={`'${v}'`}>{v}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              className="form-control param-value"
+              placeholder={valuePlaceholder ?? "'value'"}
+              value={row.value}
+              onChange={e => update(i, 'value', e.target.value)}
+              aria-label={`Parameter ${i + 1} value`}
+            />
+          )}
           <button type="button" className="btn btn--icon btn--danger" onClick={() => remove(i)} aria-label="Remove row">
             ×
           </button>

@@ -16,8 +16,9 @@ export interface ParsedParameter {
   in: 'query' | 'header' | 'path' | 'cookie';
   required: boolean;
   description?: string;
-  schema?: { type?: string; example?: string };
+  schema?: { type?: string; example?: string; enum?: string[] };
   example?: string;
+  enum?: string[];
 }
 
 export interface ParsedSpec {
@@ -31,6 +32,7 @@ export interface ParsedSpec {
 export interface CollectorParam {
   name: string;
   value: string;
+  enum?: string[];
 }
 
 export interface CollectorConfig {
