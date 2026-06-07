@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
+import type { ChatMessage } from '../utils/projectStorage';
 
 export interface ParsedOperation {
   method: string;
@@ -80,6 +81,9 @@ export interface WizardState {
   selectedOperation: ParsedOperation | null;
   collectorConfig: CollectorConfig;
   scheduleConfig: ScheduleConfig;
+  currentProjectId: string | null;
+  chatMessages: ChatMessage[];
+  preserveConfig: boolean;
 }
 
 interface WizardContextValue extends WizardState {
@@ -88,6 +92,9 @@ interface WizardContextValue extends WizardState {
   setSelectedOperation: (op: ParsedOperation | null) => void;
   setCollectorConfig: (cfg: CollectorConfig) => void;
   setScheduleConfig: (cfg: ScheduleConfig) => void;
+  setCurrentProjectId: (id: string | null) => void;
+  setChatMessages: (msgs: ChatMessage[]) => void;
+  setPreserveConfig: (v: boolean) => void;
   reset: () => void;
 }
 
@@ -132,6 +139,9 @@ const initialState: WizardState = {
   selectedOperation: null,
   collectorConfig: defaultCollectorConfig,
   scheduleConfig: defaultScheduleConfig,
+  currentProjectId: null,
+  chatMessages: [],
+  preserveConfig: false,
 };
 
 const WizardContext = createContext<WizardContextValue | null>(null);
@@ -147,11 +157,17 @@ export function WizardProvider({ children }: { children: ReactNode }) {
     setState(s => ({ ...s, collectorConfig }));
   const setScheduleConfig = (scheduleConfig: ScheduleConfig) =>
     setState(s => ({ ...s, scheduleConfig }));
+  const setCurrentProjectId = (currentProjectId: string | null) =>
+    setState(s => ({ ...s, currentProjectId }));
+  const setChatMessages = (chatMessages: ChatMessage[]) =>
+    setState(s => ({ ...s, chatMessages }));
+  const setPreserveConfig = (preserveConfig: boolean) =>
+    setState(s => ({ ...s, preserveConfig }));
   const reset = () => setState(initialState);
 
   return (
     <WizardContext.Provider
-      value={{ ...state, setRawSpec, setParsedSpec, setSelectedOperation, setCollectorConfig, setScheduleConfig, reset }}
+      value={{ ...state, setRawSpec, setParsedSpec, setSelectedOperation, setCollectorConfig, setScheduleConfig, setCurrentProjectId, setChatMessages, setPreserveConfig, reset }}
     >
       {children}
     </WizardContext.Provider>

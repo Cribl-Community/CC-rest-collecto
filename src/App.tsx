@@ -8,11 +8,23 @@ import { SchedulePage } from './pages/SchedulePage';
 import { ReviewPage } from './pages/ReviewPage';
 import { ChatPage } from './pages/ChatPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { ProjectsPage } from './pages/ProjectsPage';
 import './App.css';
 
 declare const CRIBL_BASE_PATH: string | undefined;
 
 const WIZARD_PATHS = ['/spec', '/endpoint', '/configure', '/schedule', '/review'];
+
+function ProjectsIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <rect x="1" y="3" width="14" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M1 6h14" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M1 3.5L4 1h8l3 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+      <path d="M4 9h8M4 11.5h5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+    </svg>
+  );
+}
 
 function ChatIcon() {
   return (
@@ -39,9 +51,19 @@ function HeaderNav() {
   const navigate = useNavigate();
   const isChat = location.pathname.startsWith('/chat');
   const isSettings = location.pathname.startsWith('/settings');
+  const isProjects = location.pathname.startsWith('/projects');
 
   return (
     <div className="header-nav">
+      <button
+        type="button"
+        className={`header-nav-btn${isProjects ? ' header-nav-btn--active' : ''}`}
+        onClick={() => navigate('/projects')}
+        title="Projects"
+      >
+        <ProjectsIcon />
+        <span>Projects</span>
+      </button>
       <button
         type="button"
         className={`header-nav-btn${isChat ? ' header-nav-btn--active' : ''}`}
@@ -73,7 +95,7 @@ function Layout() {
       <div className="app-shell app-shell--chat">
         <Routes>
           <Route path="/chat" element={<ChatPage />} />
-          <Route path="*" element={<Navigate to="/spec" replace />} />
+          <Route path="*" element={<Navigate to="/projects" replace />} />
         </Routes>
       </div>
     );
@@ -94,13 +116,14 @@ function Layout() {
       </header>
       <main className="app-main">
         <Routes>
+          <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/spec" element={<SpecInputPage />} />
           <Route path="/endpoint" element={<EndpointSelectPage />} />
           <Route path="/configure" element={<CollectorConfigPage />} />
           <Route path="/schedule" element={<SchedulePage />} />
           <Route path="/review" element={<ReviewPage />} />
           <Route path="/settings" element={<SettingsPage />} />
-          <Route path="*" element={<Navigate to="/spec" replace />} />
+          <Route path="*" element={<Navigate to="/projects" replace />} />
         </Routes>
       </main>
     </div>
@@ -115,7 +138,7 @@ function App() {
     <BrowserRouter basename={base}>
       <WizardProvider>
         <Routes>
-          <Route path="/" element={<Navigate to="/spec" replace />} />
+          <Route path="/" element={<Navigate to="/projects" replace />} />
           <Route path="/*" element={<Layout />} />
         </Routes>
       </WizardProvider>

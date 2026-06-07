@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useWizard } from '../context/WizardContext';
 import { JsonPreview } from '../components/JsonPreview';
 import { buildCollectorJson } from '../utils/buildCollector';
+import { saveProject, deriveProjectName } from '../utils/projectStorage';
 
 declare const CRIBL_API_URL: string | undefined;
 
@@ -12,7 +13,10 @@ interface ConfigGroup {
 }
 
 export function ReviewPage() {
-  const { selectedOperation, collectorConfig, scheduleConfig } = useWizard();
+  const {
+    selectedOperation, collectorConfig, scheduleConfig, parsedSpec,
+    chatMessages, currentProjectId, setCurrentProjectId,
+  } = useWizard();
   const navigate = useNavigate();
 
   const [jsonText, setJsonText] = useState('');
@@ -24,6 +28,7 @@ export function ReviewPage() {
   const [pushMessage, setPushMessage] = useState('');
   const [groupsLoading, setGroupsLoading] = useState(false);
   const [groupsError, setGroupsError] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const hasCriblApi = typeof CRIBL_API_URL !== 'undefined';
 
   useEffect(() => {
@@ -102,6 +107,30 @@ export function ReviewPage() {
     }
   }
 
+  async function handleSaveProject() {
+    setSaveStatus('saving');
+    try {
+      const name = deriveProjectName(collectorConfig.id, parsedSpec?.title ?? '');
+      const saved = await saveProject({
+        id: currentProjectId ?? undefined,
+        createdAt: undefined,
+        name,
+        updatedAt: new Date().toISOString(),
+        parsedSpec: parsedSpec ?? { title: name, version: '', servers: [], operations: [] },
+        selectedOperation: selectedOperation ?? null,
+        collectorConfig,
+        scheduleConfig,
+        chatMessages,
+      });
+      setCurrentProjectId(saved.id);
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 2500);
+    } catch {
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 2500);
+    }
+  }
+
   const jsonInvalid = parsedJson === null;
 
   return (
@@ -144,6 +173,15 @@ export function ReviewPage() {
           </button>
           <button type="button" className="btn btn--secondary" onClick={handleDownload} disabled={jsonInvalid}>
             ↓ Download JSON
+          </button>
+          <button
+            type="button"
+            className="btn btn--secondary"
+            onClick={handleSaveProject}
+            disabled={saveStatus === 'saving'}
+            title={currentProjectId ? 'Update saved project' : 'Save as project'}
+          >
+            {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved ✓' : saveStatus === 'error' ? 'Save Error' : currentProjectId ? 'Update Project' : 'Save Project'}
           </button>
         </div>
 

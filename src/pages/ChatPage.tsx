@@ -3,13 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useWizard } from '../context/WizardContext';
 import { getStoredModel, hasApiKey } from './SettingsPage';
 import type { CollectorConfig, ScheduleConfig } from '../context/WizardContext';
+import { saveProject, deriveProjectName } from '../utils/projectStorage';
+import type { ChatMessage } from '../utils/projectStorage';
 
 declare const CRIBL_API_URL: string;
 
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-}
+type Message = ChatMessage;
 
 const SYSTEM_PROMPT = `You are an expert at building Cribl REST Collector configurations. Your job is to help users create a Cribl SavedJob configuration for a REST Collector based on their description of an API they want to collect data from.
 
@@ -221,14 +220,23 @@ function MessageBubble({
 }
 
 export function ChatPage() {
-  const { setCollectorConfig, setScheduleConfig, setSelectedOperation, collectorConfig, scheduleConfig } = useWizard();
+  const {
+    setCollectorConfig, setScheduleConfig, setSelectedOperation,
+    collectorConfig, scheduleConfig, parsedSpec,
+    chatMessages, setChatMessages,
+    currentProjectId, setCurrentProjectId,
+  } = useWizard();
   const navigate = useNavigate();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const messages = chatMessages;
+  const setMessages = (msgs: Message[] | ((prev: Message[]) => Message[])) => {
+    setChatMessages(typeof msgs === 'function' ? msgs(chatMessages) : msgs);
+  };
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [apiKeyOk, setApiKeyOk] = useState<boolean | null>(null);
   const [model, setModel] = useState('claude-sonnet-4-5');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -260,6 +268,16 @@ export function ChatPage() {
     abortRef.current = ctrl;
 
     try {
+      // Inject existing config context if a project is loaded
+      let systemPrompt = SYSTEM_PROMPT;
+      if (collectorConfig.collectUrl) {
+        const existing = JSON.stringify({
+          collectorConfig,
+          scheduleConfig,
+        }, null, 2);
+        systemPrompt += `\n\n## Current Project Config\n\nThe user has an existing collector configuration loaded. Use it as the starting point for any changes:\n\`\`\`json\n${existing}\n\`\`\``;
+      }
+
       const resp = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -267,7 +285,7 @@ export function ChatPage() {
           model,
           max_tokens: 4096,
           stream: true,
-          system: SYSTEM_PROMPT,
+          system: systemPrompt,
           messages: newMessages.map(m => ({ role: m.role, content: m.content })),
         }),
         signal: ctrl.signal,
@@ -364,6 +382,30 @@ export function ChatPage() {
     setError(null);
   }
 
+  async function handleSaveProject() {
+    setSaveStatus('saving');
+    try {
+      const name = deriveProjectName(collectorConfig.id, parsedSpec?.title ?? '');
+      const saved = await saveProject({
+        id: currentProjectId ?? undefined,
+        createdAt: undefined,
+        name,
+        updatedAt: new Date().toISOString(),
+        parsedSpec: parsedSpec ?? { title: name, version: '', servers: [], operations: [] },
+        selectedOperation: null,
+        collectorConfig,
+        scheduleConfig,
+        chatMessages: messages,
+      });
+      setCurrentProjectId(saved.id);
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 2500);
+    } catch {
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 2500);
+    }
+  }
+
   const hasJson = messages.some(m => extractJsonBlocks(m.content).length > 0);
 
   return (
@@ -385,6 +427,15 @@ export function ChatPage() {
               Clear
             </button>
           )}
+          <button
+            type="button"
+            className="btn btn--secondary btn--sm"
+            onClick={handleSaveProject}
+            disabled={saveStatus === 'saving'}
+            title={currentProjectId ? 'Update project' : 'Save as project'}
+          >
+            {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved ✓' : saveStatus === 'error' ? 'Error' : currentProjectId ? 'Update Project' : 'Save Project'}
+          </button>
           <button type="button" className="btn btn--ghost btn--sm" onClick={() => navigate('/settings')}>
             ⚙ Settings
           </button>

@@ -1,5 +1,5 @@
 import { useState, useRef, type DragEvent, type ChangeEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useWizard } from '../context/WizardContext';
 import { parseSpec } from '../utils/parseSpec';
 import type { ParsedSpec } from '../context/WizardContext';
@@ -7,7 +7,9 @@ import type { ParsedSpec } from '../context/WizardContext';
 type LoadSource = { kind: 'file'; name: string; size: number } | { kind: 'url'; url: string };
 
 export function SpecInputPage() {
-  const { rawSpec, setRawSpec, setParsedSpec } = useWizard();
+  const { rawSpec, setRawSpec, setParsedSpec, setPreserveConfig } = useWizard();
+  const [searchParams] = useSearchParams();
+  const preserve = searchParams.get('preserve') === 'true';
 
   // paste text (small specs)
   const [pasteText, setPasteText] = useState(rawSpec);
@@ -31,6 +33,7 @@ export function SpecInputPage() {
       throw new Error('No API operations found in this spec. Make sure it contains paths.');
     }
     setParsedSpec(parsed);
+    if (preserve) setPreserveConfig(true);
     navigate('/endpoint');
   }
 
