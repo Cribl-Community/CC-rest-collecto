@@ -97,8 +97,8 @@ code {
   position: absolute;
   left: 2rem;
   top: 2rem; /* matches app-main padding — lines up with page-title */
-  width: 112px;
-  height: 112px;
+  width: 224px;
+  height: 224px;
   object-fit: contain;
   border-radius: 12px;
   pointer-events: none;
