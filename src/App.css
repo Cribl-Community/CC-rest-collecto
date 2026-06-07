@@ -92,11 +92,14 @@ code {
   overflow-y: auto;
 }
 
-/* Icon floats at the left edge of the content, aligned with the page title */
+/* Icon lives in the left gutter beside the centered content.
+   Only shown when the viewport is wide enough that it can't overlap. */
 .app-wizard-icon {
+  display: none; /* hidden by default; revealed at wide breakpoints below */
   position: absolute;
-  left: 2rem;
-  top: 2rem; /* matches app-main padding — lines up with page-title */
+  /* Keep it in the gutter to the left of the centered 900px content block */
+  left: calc((100% - 900px) / 2 - 224px - 1.5rem);
+  top: 2rem;
   width: 224px;
   height: 224px;
   object-fit: contain;
@@ -104,6 +107,25 @@ code {
   pointer-events: none;
   user-select: none;
   z-index: 1;
+}
+
+/* Show at medium width with a smaller size */
+@media (min-width: 1280px) {
+  .app-wizard-icon {
+    display: block;
+    left: calc((100% - 900px) / 2 - 160px - 1.5rem);
+    width: 160px;
+    height: 160px;
+  }
+}
+
+/* Full size only when the gutter is wide enough */
+@media (min-width: 1500px) {
+  .app-wizard-icon {
+    left: calc((100% - 900px) / 2 - 224px - 1.5rem);
+    width: 224px;
+    height: 224px;
+  }
 }
 
 .app-main {
