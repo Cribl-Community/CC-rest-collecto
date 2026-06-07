@@ -83,6 +83,7 @@ export interface WizardState {
   scheduleConfig: ScheduleConfig;
   currentProjectId: string | null;
   chatMessages: ChatMessage[];
+  chatDraft: string;
   preserveConfig: boolean;
 }
 
@@ -94,6 +95,7 @@ interface WizardContextValue extends WizardState {
   setScheduleConfig: (cfg: ScheduleConfig) => void;
   setCurrentProjectId: (id: string | null) => void;
   setChatMessages: (msgs: ChatMessage[]) => void;
+  setChatDraft: (draft: string) => void;
   setPreserveConfig: (v: boolean) => void;
   reset: () => void;
 }
@@ -141,6 +143,7 @@ const initialState: WizardState = {
   scheduleConfig: defaultScheduleConfig,
   currentProjectId: null,
   chatMessages: [],
+  chatDraft: '',
   preserveConfig: false,
 };
 
@@ -161,13 +164,15 @@ export function WizardProvider({ children }: { children: ReactNode }) {
     setState(s => ({ ...s, currentProjectId }));
   const setChatMessages = (chatMessages: ChatMessage[]) =>
     setState(s => ({ ...s, chatMessages }));
+  const setChatDraft = (chatDraft: string) =>
+    setState(s => ({ ...s, chatDraft }));
   const setPreserveConfig = (preserveConfig: boolean) =>
     setState(s => ({ ...s, preserveConfig }));
   const reset = () => setState(initialState);
 
   return (
     <WizardContext.Provider
-      value={{ ...state, setRawSpec, setParsedSpec, setSelectedOperation, setCollectorConfig, setScheduleConfig, setCurrentProjectId, setChatMessages, setPreserveConfig, reset }}
+      value={{ ...state, setRawSpec, setParsedSpec, setSelectedOperation, setCollectorConfig, setScheduleConfig, setCurrentProjectId, setChatMessages, setChatDraft, setPreserveConfig, reset }}
     >
       {children}
     </WizardContext.Provider>

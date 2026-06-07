@@ -224,6 +224,7 @@ export function ChatPage() {
     setCollectorConfig, setScheduleConfig, setSelectedOperation,
     collectorConfig, scheduleConfig, parsedSpec,
     chatMessages, setChatMessages,
+    chatDraft, setChatDraft,
     currentProjectId, setCurrentProjectId,
   } = useWizard();
   const navigate = useNavigate();
@@ -231,7 +232,8 @@ export function ChatPage() {
   const setMessages = (msgs: Message[] | ((prev: Message[]) => Message[])) => {
     setChatMessages(typeof msgs === 'function' ? msgs(chatMessages) : msgs);
   };
-  const [input, setInput] = useState('');
+  const input = chatDraft;
+  const setInput = setChatDraft;
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [apiKeyOk, setApiKeyOk] = useState<boolean | null>(null);
@@ -257,7 +259,7 @@ export function ChatPage() {
   async function sendMessage() {
     const text = input.trim();
     if (!text || streaming) return;
-    setInput('');
+    setChatDraft('');
     setError(null);
 
     const newMessages: Message[] = [...messages, { role: 'user', content: text }];
