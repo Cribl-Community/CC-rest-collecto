@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useWizard } from '../context/WizardContext';
 import { getStoredModel, hasApiKey } from './SettingsPage';
 import type { CollectorConfig, ScheduleConfig } from '../context/WizardContext';
-import { saveProject, deriveProjectName } from '../utils/projectStorage';
+import { saveProject, loadProject, deriveProjectName } from '../utils/projectStorage';
 import type { ChatMessage } from '../utils/projectStorage';
 
 declare const CRIBL_API_URL: string;
@@ -72,10 +72,10 @@ Always output the final configuration as a fenced JSON code block: \`\`\`json ..
 
 - **collectUrl** must be a JavaScript expression. Use single quotes for string literals: \`'https://api.example.com/path'\`
 - For URLs with dynamic segments, use template literals: \`\`https://api.example.com/users/\${userId}\`\`
-- **Header and param values** must be JS expressions — quoted strings or \`C.Secret("secretName")\` for Cribl-managed secrets
-- For **Bearer token** auth, use \`authentication: "none"\` and add an Authorization header: \`"'Bearer ' + C.Secret('apiToken')"\`
-- For **API key** in header, add a header with the key name and value \`C.Secret("apiKeyName")\`
-- **Never** use \`kv.*\` for collector credentials — always use \`C.Secret("name")\`. **Never** append \`.get\` or any other suffix to \`C.Secret()\`.
+- **Header and param values** must be JS expressions — quoted strings or \`C.Secret("secretName").value\` for Cribl-managed secrets
+- For **Bearer token** auth, use \`authentication: "none"\` and add an Authorization header with value \`"'Bearer ' + C.Secret('apiToken').value"\`
+- For **API key** in header, add a header with the key name and value \`C.Secret("apiKeyName").value\`
+- **Never** use \`kv.*\` for collector credentials — always use \`C.Secret("name").value\`. \`C.Secret()\` returns a secret object; you **must** append \`.value\` to get the string.
 - For **basic auth**, use \`authentication: "basic"\` with \`username\` and \`password\` fields in conf
 - **Pagination types**: \`none\`, \`response_body\`, \`response_header\`, \`response_header_link\`, \`request_offset\`, \`request_page\`
   - GitHub uses \`response_header_link\` (Link header)
@@ -222,7 +222,7 @@ function MessageBubble({
 export function ChatPage() {
   const {
     setCollectorConfig, setScheduleConfig, setSelectedOperation,
-    collectorConfig, scheduleConfig, parsedSpec,
+    selectedOperation, collectorConfig, scheduleConfig, parsedSpec,
     chatMessages, setChatMessages,
     chatDraft, setChatDraft,
     currentProjectId, setCurrentProjectId,
@@ -352,13 +352,20 @@ export function ChatPage() {
   async function autoSaveProject(currentMessages: Message[]) {
     try {
       const name = deriveProjectName(collectorConfig.id, parsedSpec?.title ?? '');
+      // If an existing project already has a selectedOperation (e.g. came from wizard),
+      // preserve it — don't overwrite with null just because we're on the chat page.
+      let preservedOperation = selectedOperation;
+      if (currentProjectId && !preservedOperation) {
+        const existing = await loadProject(currentProjectId);
+        preservedOperation = existing?.selectedOperation ?? null;
+      }
       const saved = await saveProject({
         id: currentProjectId ?? undefined,
         createdAt: undefined,
         name,
         updatedAt: new Date().toISOString(),
         parsedSpec: parsedSpec ?? { title: name, version: '', servers: [], operations: [] },
-        selectedOperation: null,
+        selectedOperation: preservedOperation,
         collectorConfig,
         scheduleConfig,
         chatMessages: currentMessages,
@@ -379,7 +386,7 @@ export function ChatPage() {
     }
   }
 
-  function handleLoad(json: object) {
+  async function handleLoad(json: object) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const raw = json as Record<string, unknown>;
     const result = parseSavedJob(raw);
@@ -387,19 +394,36 @@ export function ChatPage() {
 
     const { collector, schedule } = result;
     const mergedCollector = { ...collectorConfig, ...collector } as CollectorConfig;
-    setCollectorConfig(mergedCollector);
-    setScheduleConfig({ ...scheduleConfig, ...schedule } as ScheduleConfig);
-
-    // Synthesize a minimal selectedOperation so CollectorConfigPage doesn't redirect
-    setSelectedOperation({
+    const synthOperation = {
       method: (mergedCollector.collectMethod ?? 'get').toUpperCase(),
       path: mergedCollector.collectUrl ?? '',
       operationId: mergedCollector.id,
       summary: mergedCollector.description || undefined,
-      tags: [],
-      parameters: [],
-      servers: [],
-    });
+      tags: [] as string[],
+      parameters: [] as import('../context/WizardContext').ParsedParameter[],
+      servers: [] as string[],
+    };
+
+    setCollectorConfig(mergedCollector);
+    setScheduleConfig({ ...scheduleConfig, ...schedule } as ScheduleConfig);
+    setSelectedOperation(synthOperation);
+
+    // Persist the loaded config so "Open" routes to the wizard next time
+    try {
+      const name = deriveProjectName(mergedCollector.id, parsedSpec?.title ?? '');
+      const saved = await saveProject({
+        id: currentProjectId ?? undefined,
+        createdAt: undefined,
+        name,
+        updatedAt: new Date().toISOString(),
+        parsedSpec: parsedSpec ?? { title: name, version: '', servers: [], operations: [] },
+        selectedOperation: synthOperation,
+        collectorConfig: mergedCollector,
+        scheduleConfig: { ...scheduleConfig, ...schedule } as ScheduleConfig,
+        chatMessages,
+      });
+      setCurrentProjectId(saved.id);
+    } catch { /* non-fatal */ }
 
     navigate('/configure');
   }

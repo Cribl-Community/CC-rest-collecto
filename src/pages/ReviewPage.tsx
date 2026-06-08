@@ -29,15 +29,33 @@ export function ReviewPage() {
   const [groupsLoading, setGroupsLoading] = useState(false);
   const [groupsError, setGroupsError] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [pushId, setPushId] = useState('');
   const hasCriblApi = typeof CRIBL_API_URL !== 'undefined';
 
+  // Synthesize a minimal operation for AI Builder configs that have no spec operation
+  const effectiveOperation = selectedOperation ?? {
+    method: collectorConfig.collectMethod.toUpperCase(),
+    path: collectorConfig.collectUrl,
+    operationId: collectorConfig.id,
+    summary: collectorConfig.description || undefined,
+    tags: [],
+    parameters: [],
+    servers: [],
+  };
+
   useEffect(() => {
-    if (!selectedOperation) return;
-    const json = buildCollectorJson(selectedOperation, collectorConfig, scheduleConfig);
+    if (!collectorConfig.collectUrl && !selectedOperation) return;
+    const json = buildCollectorJson(effectiveOperation, collectorConfig, scheduleConfig);
     const text = JSON.stringify(json, null, 2);
     setJsonText(text);
     setParsedJson(json);
+    setPushId(id => id || collectorConfig.id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedOperation, collectorConfig, scheduleConfig]);
+
+  useEffect(() => {
+    setPushId(collectorConfig.id);
+  }, [collectorConfig.id]);
 
   useEffect(() => {
     if (!hasCriblApi) return;
@@ -53,7 +71,7 @@ export function ReviewPage() {
       .finally(() => setGroupsLoading(false));
   }, [hasCriblApi]);
 
-  if (!selectedOperation) {
+  if (!selectedOperation && !collectorConfig.collectUrl) {
     navigate('/spec');
     return null;
   }
@@ -87,18 +105,53 @@ export function ReviewPage() {
     if (!parsedJson || !selectedGroup) return;
     setPushStatus('loading');
     setPushMessage('');
-    try {
-      const resp = await fetch(`${CRIBL_API_URL}/m/${selectedGroup}/lib/jobs`, {
-        method: 'POST',
+
+    const effectiveId = pushId.trim() || collectorConfig.id;
+    // Inject the (possibly renamed) id into the payload
+    const payload = { ...(parsedJson as Record<string, unknown>), id: effectiveId };
+
+
+    async function doPush(method: 'POST' | 'PATCH', url: string) {
+      const r = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(parsedJson),
+        body: JSON.stringify(payload),
       });
-      const data = await resp.json();
-      if (!resp.ok) {
-        const msg = data?.message || data?.error || resp.statusText;
+      const bodyText = await r.text();
+      let d: Record<string, unknown> = {};
+      try { d = JSON.parse(bodyText); } catch { /* non-JSON body */ }
+
+
+      return { ok: r.ok, status: r.status, data: d };
+    }
+
+    try {
+      const base = `${CRIBL_API_URL}/m/${selectedGroup}/lib/jobs`;
+      let { ok, data } = await doPush('POST', base);
+
+      // On conflict, retry as an update
+      if (!ok) {
+        const errMsg = (data?.message as string) || (data?.error as string) || '';
+        const isConflict = errMsg.toLowerCase().includes('already exist') || errMsg.toLowerCase().includes('conflict');
+
+
+        if (isConflict) {
+          ({ ok, data } = await doPush('PATCH', `${base}/${encodeURIComponent(effectiveId)}`));
+          if (ok) {
+            const items = data?.items as Array<{ id?: string }> | undefined;
+            const updatedId = items?.[0]?.id || (data?.id as string) || effectiveId;
+            setPushStatus('success');
+            setPushMessage(`Collector "${updatedId}" updated in group "${selectedGroup}".`);
+            return;
+          }
+        }
+        const msg = (data?.message as string) || (data?.error as string) || `HTTP ${data}`;
         throw new Error(msg);
       }
-      const createdId = data?.items?.[0]?.id || (data as { id?: string }).id || collectorConfig.id;
+
+      const items = data?.items as Array<{ id?: string }> | undefined;
+      const createdId = items?.[0]?.id || (data?.id as string) || effectiveId;
+
       setPushStatus('success');
       setPushMessage(`Collector "${createdId}" created in group "${selectedGroup}".`);
     } catch (e) {
@@ -144,10 +197,10 @@ export function ReviewPage() {
 
       <div className="review-summary">
         <div className="summary-chip">
-          <span className={`method-badge method--${selectedOperation.method.toLowerCase()}`}>
-            {selectedOperation.method}
+          <span className={`method-badge method--${effectiveOperation.method.toLowerCase()}`}>
+            {effectiveOperation.method}
           </span>
-          <code>{selectedOperation.path}</code>
+          <code>{effectiveOperation.path}</code>
         </div>
         <div className="summary-chip">
           <span className="summary-label">ID</span>
@@ -187,6 +240,28 @@ export function ReviewPage() {
 
         {hasCriblApi && (
           <div className="push-section">
+            <div className="push-id-row">
+              <label className="push-id-label" htmlFor="push-collector-id">Collector ID</label>
+              <input
+                id="push-collector-id"
+                type="text"
+                className="form-control push-id-input"
+                value={pushId}
+                onChange={e => { setPushId(e.target.value); setPushStatus('idle'); }}
+                placeholder={collectorConfig.id}
+                aria-label="Collector ID to push as"
+              />
+              {pushId !== collectorConfig.id && (
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--sm push-id-reset"
+                  onClick={() => { setPushId(collectorConfig.id); setPushStatus('idle'); }}
+                  title="Reset to original ID"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
             <div className="push-controls">
               {groupsLoading && <span className="push-hint">Loading groups…</span>}
               {groupsError && <span className="push-hint push-hint--error">{groupsError}</span>}
@@ -206,9 +281,12 @@ export function ReviewPage() {
                 type="button"
                 className={`btn btn--primary push-btn push-btn--${pushStatus}`}
                 onClick={handlePush}
-                disabled={jsonInvalid || pushStatus === 'loading' || !selectedGroup || groupsLoading}
+                disabled={jsonInvalid || pushStatus === 'loading' || pushStatus === 'success' || !selectedGroup || groupsLoading || !pushId.trim()}
               >
-                {pushStatus === 'loading' ? 'Pushing…' : pushStatus === 'success' ? 'Pushed ✓' : '↑ Push to Cribl'}
+                {pushStatus === 'loading' ? 'Pushing…'
+                  : pushStatus === 'success' ? 'Pushed ✓'
+                  : pushStatus === 'error' ? 'Push Failed — Retry ↑'
+                  : '↑ Push to Cribl'}
               </button>
             </div>
             {pushStatus === 'success' && (

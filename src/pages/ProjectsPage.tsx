@@ -22,8 +22,14 @@ function relativeTime(iso: string): string {
 
 function deriveLoadPath(project: Awaited<ReturnType<typeof loadProject>>): string {
   if (!project) return '/spec';
-  if (!project.selectedOperation && !project.collectorConfig.collectUrl) return '/endpoint';
-  return '/review';
+  // Completed config (wizard or AI builder with loaded config) → review
+  if (project.selectedOperation || project.collectorConfig?.collectUrl) return '/review';
+  // AI builder session with chat history but no completed config → resume in chat
+  if (project.chatMessages?.length > 0) return '/chat';
+  // Wizard in progress with a parsed spec → pick an endpoint
+  if (project.parsedSpec?.operations?.length > 0) return '/endpoint';
+  // Nothing recoverable → restart from spec input
+  return '/spec';
 }
 
 export function ProjectsPage() {

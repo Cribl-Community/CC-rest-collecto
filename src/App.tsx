@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import wizardIconUrl from './assets/icon.png';
 import { WizardProvider } from './context/WizardContext';
 import { Stepper } from './components/Stepper';
 import { SpecInputPage } from './pages/SpecInputPage';
@@ -117,7 +118,7 @@ function Layout() {
       )}
       <div className="app-main-wrapper">
         {(isWizard || isProjects) && (
-          <img src="/icon.png" className="app-wizard-icon" alt="REST Collecto" />
+          <img src={wizardIconUrl} className="app-wizard-icon" alt="REST Collecto" />
         )}
       <main className="app-main">
         <Routes>
