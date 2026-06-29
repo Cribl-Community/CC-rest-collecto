@@ -68,6 +68,48 @@ Always output the final configuration as a fenced JSON code block: \`\`\`json ..
 }
 \`\`\`
 
+### Discovery — HTTP example (collecting per-repo data across all repos)
+
+\`\`\`json
+"discovery": {
+  "discoverType": "http",
+  "discoverUrl": "'https://api.github.com/user/repos'",
+  "discoverMethod": "get",
+  "discoverRequestHeaders": [
+    {"name": "Authorization", "value": "'Bearer ' + C.Secret('githubToken').value"},
+    {"name": "Accept", "value": "'application/vnd.github+json'"}
+  ],
+  "discoverDataField": "",
+  "pagination": {
+    "type": "response_header_link",
+    "nextRelationAttribute": "next",
+    "maxPages": 100
+  }
+}
+\`\`\`
+
+After discovery runs, each item is available as \`__srcId\` in the collection URL expression, e.g.:
+\`"collectUrl": "\\\`https://api.github.com/repos/\\\${__srcId}/issues\\\`"\`
+
+### Discovery — list example
+
+\`\`\`json
+"discovery": {
+  "discoverType": "list",
+  "itemList": ["org1", "org2", "org3"]
+}
+\`\`\`
+
+### Discovery — JSON (hard-coded) example
+
+\`\`\`json
+"discovery": {
+  "discoverType": "json",
+  "manualDiscoverResult": "{\\"items\\": [\\"a\\", \\"b\\"]}",
+  "discoverDataField": "items"
+}
+\`\`\`
+
 ## Important rules
 
 - **collectUrl** must be a JavaScript expression. Use single quotes for string literals: \`'https://api.example.com/path'\`
@@ -81,10 +123,12 @@ Always output the final configuration as a fenced JSON code block: \`\`\`json ..
   - GitHub uses \`response_header_link\` (Link header)
   - Stripe, Twitter use cursor/offset in response body → \`response_body\`
   - Simple offset APIs use \`request_offset\`
+- **discovery.discoverType** must always be present. Use \`"none"\` when there is no discovery.
+- When discovery is used, the collection URL should reference discovered items using \`__srcId\` (e.g. as a template literal in the collectUrl expression).
 
 ## Common APIs quick reference
 
-- **GitHub**: base \`https://api.github.com\`, Bearer token auth, Link header pagination
+- **GitHub**: base \`https://api.github.com\`, Bearer token auth, Link header pagination; use discovery for repos/orgs
 - **Stripe**: base \`https://api.stripe.com/v1\`, Bearer token (secret key), cursor pagination
 - **Slack**: base \`https://slack.com/api\`, Bearer token, cursor pagination in response body
 - **PagerDuty**: base \`https://api.pagerduty.com\`, Bearer token auth
@@ -109,6 +153,11 @@ function parseSavedJob(raw: Record<string, unknown>): { collector: Partial<Colle
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const input: any = raw.input ?? {};
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const disc: any = conf.discovery ?? {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const discPag: any = disc.pagination ?? {};
+
     const collector: Partial<CollectorConfig> = {
       id: typeof raw.id === 'string' ? raw.id : undefined,
       description: typeof raw.description === 'string' ? raw.description : undefined,
@@ -130,6 +179,26 @@ function parseSavedJob(raw: Record<string, unknown>): { collector: Partial<Colle
       paginationSizeField: conf.pagination?.sizeField ?? '',
       paginationSize: conf.pagination?.size ?? 100,
       paginationZeroIndexed: conf.pagination?.zeroIndexed ?? false,
+      // Discovery
+      discoverType: disc.discoverType ?? 'none',
+      discoverUrl: disc.discoverUrl ?? '',
+      discoverMethod: disc.discoverMethod ?? 'get',
+      discoverRequestHeaders: Array.isArray(disc.discoverRequestHeaders) ? disc.discoverRequestHeaders : [],
+      discoverDataField: disc.discoverDataField ?? '',
+      discoverPaginationType: discPag.type ?? 'none',
+      discoverPaginationMaxPages: discPag.maxPages ?? 100,
+      discoverPaginationAttribute: discPag.attribute ?? '',
+      discoverPaginationNextRelation: discPag.nextRelationAttribute ?? 'next',
+      discoverPaginationOffsetField: discPag.offsetField ?? '',
+      discoverPaginationLimitField: discPag.limitField ?? '',
+      discoverPaginationLimit: discPag.limit ?? 100,
+      discoverPaginationPageField: discPag.pageField ?? '',
+      discoverPaginationSizeField: discPag.sizeField ?? '',
+      discoverPaginationSize: discPag.size ?? 100,
+      discoverPaginationZeroIndexed: discPag.zeroIndexed ?? false,
+      manualDiscoverResult: disc.manualDiscoverResult ?? '',
+      discoverJsonDataField: disc.discoverDataField ?? '',
+      itemList: Array.isArray(disc.itemList) ? disc.itemList.join(', ') : (disc.itemList ?? ''),
       timeout: typeof conf.timeout === 'number' ? conf.timeout : 30,
       rejectUnauthorized: conf.rejectUnauthorized !== false,
       disableTimeFilter: conf.disableTimeFilter === true,

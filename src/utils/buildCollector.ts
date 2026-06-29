@@ -1,4 +1,4 @@
-import type { CollectorConfig, ScheduleConfig, ParsedOperation } from '../context/WizardContext';
+import type { CollectorConfig, ScheduleConfig, ParsedOperation, PaginationType } from '../context/WizardContext';
 
 function buildCollectUrl(operation: ParsedOperation, config: CollectorConfig): string {
   if (config.collectUrl) return config.collectUrl;
@@ -19,6 +19,92 @@ function mapMethod(method: string): CollectorConfig['collectMethod'] {
   return 'other';
 }
 
+function buildPaginationBlock(
+  type: PaginationType,
+  cfg: {
+    maxPages: number; attribute: string; nextRelation: string;
+    offsetField: string; limitField: string; limit: number;
+    pageField: string; sizeField: string; size: number; zeroIndexed: boolean;
+  }
+): Record<string, unknown> | null {
+  if (type === 'none') return { type: 'none' };
+  const p: Record<string, unknown> = { type };
+  switch (type) {
+    case 'response_body':
+    case 'response_header':
+      p.attribute = cfg.attribute;
+      p.maxPages = cfg.maxPages;
+      break;
+    case 'response_header_link':
+      p.nextRelationAttribute = cfg.nextRelation || 'next';
+      p.maxPages = cfg.maxPages;
+      break;
+    case 'request_offset':
+      p.offsetField = cfg.offsetField;
+      p.limitField = cfg.limitField;
+      p.limit = cfg.limit;
+      p.maxPages = cfg.maxPages;
+      p.zeroIndexed = cfg.zeroIndexed;
+      break;
+    case 'request_page':
+      p.pageField = cfg.pageField;
+      p.sizeField = cfg.sizeField;
+      p.size = cfg.size;
+      p.maxPages = cfg.maxPages;
+      p.zeroIndexed = cfg.zeroIndexed;
+      break;
+  }
+  return p;
+}
+
+function buildDiscovery(config: CollectorConfig): Record<string, unknown> {
+  switch (config.discoverType) {
+    case 'http': {
+      const discoverHeaders = config.discoverRequestHeaders.filter(h => h.name.trim());
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const d: Record<string, any> = {
+        discoverType: 'http',
+        discoverUrl: config.discoverUrl,
+        discoverMethod: config.discoverMethod || 'get',
+      };
+      if (discoverHeaders.length > 0) {
+        d.discoverRequestHeaders = discoverHeaders.map(h => ({
+          name: h.name,
+          value: h.value.startsWith("'") || h.value.startsWith('`') ? h.value : `'${h.value}'`,
+        }));
+      }
+      if (config.discoverDataField) d.discoverDataField = config.discoverDataField;
+      const pagination = buildPaginationBlock(config.discoverPaginationType, {
+        maxPages: config.discoverPaginationMaxPages,
+        attribute: config.discoverPaginationAttribute,
+        nextRelation: config.discoverPaginationNextRelation,
+        offsetField: config.discoverPaginationOffsetField,
+        limitField: config.discoverPaginationLimitField,
+        limit: config.discoverPaginationLimit,
+        pageField: config.discoverPaginationPageField,
+        sizeField: config.discoverPaginationSizeField,
+        size: config.discoverPaginationSize,
+        zeroIndexed: config.discoverPaginationZeroIndexed,
+      });
+      if (pagination) d.pagination = pagination;
+      return d;
+    }
+    case 'json':
+      return {
+        discoverType: 'json',
+        manualDiscoverResult: config.manualDiscoverResult || '{}',
+        ...(config.discoverJsonDataField ? { discoverDataField: config.discoverJsonDataField } : {}),
+      };
+    case 'list':
+      return {
+        discoverType: 'list',
+        itemList: config.itemList.split(',').map(s => s.trim()).filter(Boolean),
+      };
+    default:
+      return { discoverType: 'none' };
+  }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function buildCollectorJson(
   operation: ParsedOperation,
@@ -37,7 +123,6 @@ export function buildCollectorJson(
     authentication: config.authentication,
     timeout: config.timeout,
     rejectUnauthorized: config.rejectUnauthorized,
-    discovery: { discoverType: 'none' },
   };
 
   if (config.disableTimeFilter) conf.disableTimeFilter = true;
@@ -57,39 +142,27 @@ export function buildCollectorJson(
   }
 
   if (config.paginationType !== 'none') {
-    const p: Record<string, unknown> = { type: config.paginationType };
-    switch (config.paginationType) {
-      case 'response_body':
-      case 'response_header':
-        p.attribute = config.paginationAttribute;
-        p.maxPages = config.paginationMaxPages;
-        break;
-      case 'response_header_link':
-        p.nextRelationAttribute = config.paginationNextRelation || 'next';
-        p.maxPages = config.paginationMaxPages;
-        break;
-      case 'request_offset':
-        p.offsetField = config.paginationOffsetField;
-        p.limitField = config.paginationLimitField;
-        p.limit = config.paginationLimit;
-        p.maxPages = config.paginationMaxPages;
-        p.zeroIndexed = config.paginationZeroIndexed;
-        break;
-      case 'request_page':
-        p.pageField = config.paginationPageField;
-        p.sizeField = config.paginationSizeField;
-        p.size = config.paginationSize;
-        p.maxPages = config.paginationMaxPages;
-        p.zeroIndexed = config.paginationZeroIndexed;
-        break;
-    }
-    conf.pagination = p;
+    conf.pagination = buildPaginationBlock(config.paginationType, {
+      maxPages: config.paginationMaxPages,
+      attribute: config.paginationAttribute,
+      nextRelation: config.paginationNextRelation,
+      offsetField: config.paginationOffsetField,
+      limitField: config.paginationLimitField,
+      limit: config.paginationLimit,
+      pageField: config.paginationPageField,
+      sizeField: config.paginationSizeField,
+      size: config.paginationSize,
+      zeroIndexed: config.paginationZeroIndexed,
+    });
   }
 
   if (config.authentication === 'basic' || config.authentication === 'basicSecret') {
     conf.username = config.username || '';
     if (config.authentication === 'basic') conf.password = config.password || '';
   }
+
+  // Discovery
+  conf.discovery = buildDiscovery(config);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const runConf: Record<string, any> = {

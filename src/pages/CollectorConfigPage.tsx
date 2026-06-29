@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useWizard, type CollectorParam } from '../context/WizardContext';
+import { useWizard, type CollectorParam, type PaginationType } from '../context/WizardContext';
 import { FormField } from '../components/FormField';
 
 function ParamRows({
@@ -65,6 +65,82 @@ function ParamRows({
       <button type="button" className="btn btn--ghost btn--sm" onClick={add}>
         + Add row
       </button>
+    </div>
+  );
+}
+
+function PaginationFields({
+  prefix,
+  type,
+  values,
+  onChange,
+}: {
+  prefix: string;
+  type: PaginationType;
+  values: {
+    maxPages: number; attribute: string; nextRelation: string;
+    offsetField: string; limitField: string; limit: number;
+    pageField: string; sizeField: string; size: number; zeroIndexed: boolean;
+  };
+  onChange: (key: string, value: string | number | boolean) => void;
+}) {
+  if (type === 'none') return null;
+  return (
+    <div className="pagination-fields">
+      <FormField
+        label="Max Pages"
+        type="number"
+        value={values.maxPages}
+        min={1}
+        onChange={e => onChange(`${prefix}MaxPages`, Number(e.target.value))}
+        hint="Maximum number of pages to retrieve"
+      />
+      {(type === 'response_body' || type === 'response_header') && (
+        <FormField
+          label="Attribute"
+          value={values.attribute}
+          onChange={e => onChange(`${prefix}Attribute`, e.target.value)}
+          placeholder="next_cursor"
+          hint="Response attribute containing the next page token or URL"
+        />
+      )}
+      {type === 'response_header_link' && (
+        <FormField
+          label="Next Relation Attribute"
+          value={values.nextRelation}
+          onChange={e => onChange(`${prefix}NextRelation`, e.target.value)}
+          placeholder="next"
+          hint='Relation name in the Link header for the next page (usually "next")'
+        />
+      )}
+      {type === 'request_offset' && (
+        <div className="form-grid form-grid--2">
+          <FormField label="Offset Field" value={values.offsetField} onChange={e => onChange(`${prefix}OffsetField`, e.target.value)} placeholder="offset" hint="Query param name for the start index" />
+          <FormField label="Limit Field" value={values.limitField} onChange={e => onChange(`${prefix}LimitField`, e.target.value)} placeholder="limit" hint="Query param name for records per page" />
+          <FormField label="Limit (records per page)" type="number" value={values.limit} min={1} onChange={e => onChange(`${prefix}Limit`, Number(e.target.value))} />
+          <div className="form-field">
+            <label className="form-label">Options</label>
+            <label className="checkbox-label">
+              <input type="checkbox" checked={values.zeroIndexed} onChange={e => onChange(`${prefix}ZeroIndexed`, e.target.checked)} />
+              Zero-indexed (first page = 0)
+            </label>
+          </div>
+        </div>
+      )}
+      {type === 'request_page' && (
+        <div className="form-grid form-grid--2">
+          <FormField label="Page Field" value={values.pageField} onChange={e => onChange(`${prefix}PageField`, e.target.value)} placeholder="page" hint="Query param name for the page number" />
+          <FormField label="Size Field" value={values.sizeField} onChange={e => onChange(`${prefix}SizeField`, e.target.value)} placeholder="per_page" hint="Query param name for page size" />
+          <FormField label="Page Size" type="number" value={values.size} min={1} onChange={e => onChange(`${prefix}Size`, Number(e.target.value))} />
+          <div className="form-field">
+            <label className="form-label">Options</label>
+            <label className="checkbox-label">
+              <input type="checkbox" checked={values.zeroIndexed} onChange={e => onChange(`${prefix}ZeroIndexed`, e.target.checked)} />
+              Zero-indexed (first page = 0)
+            </label>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -171,112 +247,18 @@ export function CollectorConfigPage() {
           </FormField>
         </div>
 
-        {cfg.paginationType !== 'none' && (
-          <div className="pagination-fields">
-            <FormField
-              label="Max Pages"
-              type="number"
-              value={cfg.paginationMaxPages}
-              min={1}
-              onChange={e => update('paginationMaxPages', Number(e.target.value))}
-              hint="Maximum number of pages to retrieve per collection task"
-            />
-
-            {(cfg.paginationType === 'response_body' || cfg.paginationType === 'response_header') && (
-              <FormField
-                label="Attribute"
-                value={cfg.paginationAttribute}
-                onChange={e => update('paginationAttribute', e.target.value)}
-                placeholder="next_cursor"
-                hint="Name of the response attribute containing the next page token or URL"
-              />
-            )}
-
-            {cfg.paginationType === 'response_header_link' && (
-              <FormField
-                label="Next Relation Attribute"
-                value={cfg.paginationNextRelation}
-                onChange={e => update('paginationNextRelation', e.target.value)}
-                placeholder="next"
-                hint='Relation name in the Link header for the next page (usually "next")'
-              />
-            )}
-
-            {cfg.paginationType === 'request_offset' && (
-              <div className="form-grid form-grid--2">
-                <FormField
-                  label="Offset Field"
-                  value={cfg.paginationOffsetField}
-                  onChange={e => update('paginationOffsetField', e.target.value)}
-                  placeholder="offset"
-                  hint="Query param name for the start index"
-                />
-                <FormField
-                  label="Limit Field"
-                  value={cfg.paginationLimitField}
-                  onChange={e => update('paginationLimitField', e.target.value)}
-                  placeholder="limit"
-                  hint="Query param name for records per page"
-                />
-                <FormField
-                  label="Limit (records per page)"
-                  type="number"
-                  value={cfg.paginationLimit}
-                  min={1}
-                  onChange={e => update('paginationLimit', Number(e.target.value))}
-                />
-                <div className="form-field">
-                  <label className="form-label">Options</label>
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={cfg.paginationZeroIndexed}
-                      onChange={e => update('paginationZeroIndexed', e.target.checked)}
-                    />
-                    Zero-indexed (first page = 0)
-                  </label>
-                </div>
-              </div>
-            )}
-
-            {cfg.paginationType === 'request_page' && (
-              <div className="form-grid form-grid--2">
-                <FormField
-                  label="Page Field"
-                  value={cfg.paginationPageField}
-                  onChange={e => update('paginationPageField', e.target.value)}
-                  placeholder="page"
-                  hint="Query param name for the page number"
-                />
-                <FormField
-                  label="Size Field"
-                  value={cfg.paginationSizeField}
-                  onChange={e => update('paginationSizeField', e.target.value)}
-                  placeholder="per_page"
-                  hint="Query param name for page size"
-                />
-                <FormField
-                  label="Page Size"
-                  type="number"
-                  value={cfg.paginationSize}
-                  min={1}
-                  onChange={e => update('paginationSize', Number(e.target.value))}
-                />
-                <div className="form-field">
-                  <label className="form-label">Options</label>
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={cfg.paginationZeroIndexed}
-                      onChange={e => update('paginationZeroIndexed', e.target.checked)}
-                    />
-                    Zero-indexed (first page = 0)
-                  </label>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        <PaginationFields
+          prefix="pagination"
+          type={cfg.paginationType}
+          values={{
+            maxPages: cfg.paginationMaxPages, attribute: cfg.paginationAttribute,
+            nextRelation: cfg.paginationNextRelation, offsetField: cfg.paginationOffsetField,
+            limitField: cfg.paginationLimitField, limit: cfg.paginationLimit,
+            pageField: cfg.paginationPageField, sizeField: cfg.paginationSizeField,
+            size: cfg.paginationSize, zeroIndexed: cfg.paginationZeroIndexed,
+          }}
+          onChange={(key, value) => update(key as keyof typeof cfg, value as never)}
+        />
       </div>
 
       <div className="form-section">
@@ -332,6 +314,129 @@ export function CollectorConfigPage() {
           keyPlaceholder="param"
           valuePlaceholder="'value'"
         />
+      </div>
+
+      <div className="form-section">
+        <h3 className="form-section-title">Discovery</h3>
+        <p className="form-hint">
+          Discovery enumerates a list of items (e.g. repos, accounts) that the collector then iterates over.
+          Use <strong>HTTP</strong> to call an API endpoint, <strong>JSON</strong> to hard-code a list, or <strong>List</strong> for a static comma-separated set.
+        </p>
+        <FormField
+          as="select"
+          label="Discovery Type"
+          value={cfg.discoverType}
+          onChange={e => update('discoverType', e.target.value as typeof cfg.discoverType)}
+        >
+          <option value="none">None</option>
+          <option value="http">HTTP</option>
+          <option value="json">JSON (hard-coded)</option>
+          <option value="list">List (static)</option>
+        </FormField>
+
+        {cfg.discoverType === 'http' && (
+          <>
+            <FormField
+              label="Discovery URL"
+              required
+              value={cfg.discoverUrl}
+              onChange={e => update('discoverUrl', e.target.value)}
+              placeholder="'https://api.example.com/repos'"
+              hint="JS expression. Use single quotes for literals, backticks for template strings."
+            />
+            <div className="form-grid form-grid--2">
+              <FormField
+                as="select"
+                label="HTTP Method"
+                value={cfg.discoverMethod}
+                onChange={e => update('discoverMethod', e.target.value as typeof cfg.discoverMethod)}
+              >
+                <option value="get">GET</option>
+                <option value="post">POST</option>
+                <option value="post_with_body">POST with body</option>
+                <option value="other">Other</option>
+              </FormField>
+              <FormField
+                as="select"
+                label="Pagination"
+                value={cfg.discoverPaginationType}
+                onChange={e => update('discoverPaginationType', e.target.value as PaginationType)}
+              >
+                <option value="none">None</option>
+                <option value="response_body">Response Body</option>
+                <option value="response_header">Response Header</option>
+                <option value="response_header_link">Response Header Link</option>
+                <option value="request_offset">Request Offset</option>
+                <option value="request_page">Request Page</option>
+              </FormField>
+            </div>
+            <FormField
+              label="Data Field"
+              value={cfg.discoverDataField}
+              onChange={e => update('discoverDataField', e.target.value)}
+              placeholder="items"
+              hint="Path to the array field in the response that contains the discovered items (e.g. 'items', 'data.repos')"
+            />
+            <div className="form-section-sub">
+              <h4 className="form-section-subtitle">Discovery Request Headers</h4>
+              <ParamRows
+                rows={cfg.discoverRequestHeaders}
+                onChange={rows => update('discoverRequestHeaders', rows)}
+                keyPlaceholder="Header-Name"
+                valuePlaceholder="'value' or C.Secret('name').value"
+              />
+            </div>
+            <PaginationFields
+              prefix="discoverPagination"
+              type={cfg.discoverPaginationType}
+              values={{
+                maxPages: cfg.discoverPaginationMaxPages, attribute: cfg.discoverPaginationAttribute,
+                nextRelation: cfg.discoverPaginationNextRelation, offsetField: cfg.discoverPaginationOffsetField,
+                limitField: cfg.discoverPaginationLimitField, limit: cfg.discoverPaginationLimit,
+                pageField: cfg.discoverPaginationPageField, sizeField: cfg.discoverPaginationSizeField,
+                size: cfg.discoverPaginationSize, zeroIndexed: cfg.discoverPaginationZeroIndexed,
+              }}
+              onChange={(key, value) => update(key as keyof typeof cfg, value as never)}
+            />
+          </>
+        )}
+
+        {cfg.discoverType === 'json' && (
+          <>
+            <div className="form-field">
+              <label className="form-label">Manual Discovery Result</label>
+              <textarea
+                className="form-control form-control--mono"
+                rows={6}
+                value={cfg.manualDiscoverResult}
+                onChange={e => update('manualDiscoverResult', e.target.value)}
+                placeholder={'{\n  "items": ["item1", "item2"]\n}'}
+              />
+              <p className="form-hint">Hard-coded JSON object to use as the discovery result.</p>
+            </div>
+            <FormField
+              label="Data Field"
+              value={cfg.discoverJsonDataField}
+              onChange={e => update('discoverJsonDataField', e.target.value)}
+              placeholder="items"
+              hint="Field within the JSON object containing the array of items"
+            />
+          </>
+        )}
+
+        {cfg.discoverType === 'list' && (
+          <div className="form-field">
+            <label className="form-label">Item List</label>
+            <textarea
+              className="form-control form-control--mono"
+              rows={4}
+              value={cfg.itemList}
+              onChange={e => update('itemList', e.target.value)}
+              placeholder="item1, item2, item3"
+            />
+            <p className="form-hint">Comma-separated list of items to use as the discovery result.</p>
+          </div>
+        )}
       </div>
 
       <div className="form-section">

@@ -36,6 +36,8 @@ export interface CollectorParam {
   enum?: string[];
 }
 
+export type PaginationType = 'none' | 'response_body' | 'response_header' | 'response_header_link' | 'request_offset' | 'request_page';
+
 export interface CollectorConfig {
   id: string;
   description: string;
@@ -46,7 +48,7 @@ export interface CollectorConfig {
   password?: string;
   requestHeaders: CollectorParam[];
   requestParams: CollectorParam[];
-  paginationType: 'none' | 'response_body' | 'response_header' | 'response_header_link' | 'request_offset' | 'request_page';
+  paginationType: PaginationType;
   paginationMaxPages: number;
   paginationAttribute: string;
   paginationNextRelation: string;
@@ -57,6 +59,29 @@ export interface CollectorConfig {
   paginationSizeField: string;
   paginationSize: number;
   paginationZeroIndexed: boolean;
+  // Discovery
+  discoverType: 'none' | 'http' | 'json' | 'list';
+  // http discovery
+  discoverUrl: string;
+  discoverMethod: 'get' | 'post' | 'post_with_body' | 'other';
+  discoverRequestHeaders: CollectorParam[];
+  discoverDataField: string;
+  discoverPaginationType: PaginationType;
+  discoverPaginationMaxPages: number;
+  discoverPaginationAttribute: string;
+  discoverPaginationNextRelation: string;
+  discoverPaginationOffsetField: string;
+  discoverPaginationLimitField: string;
+  discoverPaginationLimit: number;
+  discoverPaginationPageField: string;
+  discoverPaginationSizeField: string;
+  discoverPaginationSize: number;
+  discoverPaginationZeroIndexed: boolean;
+  // json discovery
+  manualDiscoverResult: string;
+  discoverJsonDataField: string;
+  // list discovery
+  itemList: string;
   timeout: number;
   rejectUnauthorized: boolean;
   disableTimeFilter: boolean;
@@ -119,6 +144,25 @@ const defaultCollectorConfig: CollectorConfig = {
   paginationSizeField: '',
   paginationSize: 100,
   paginationZeroIndexed: false,
+  discoverType: 'none',
+  discoverUrl: '',
+  discoverMethod: 'get',
+  discoverRequestHeaders: [],
+  discoverDataField: '',
+  discoverPaginationType: 'none',
+  discoverPaginationMaxPages: 100,
+  discoverPaginationAttribute: '',
+  discoverPaginationNextRelation: 'next',
+  discoverPaginationOffsetField: '',
+  discoverPaginationLimitField: '',
+  discoverPaginationLimit: 100,
+  discoverPaginationPageField: '',
+  discoverPaginationSizeField: '',
+  discoverPaginationSize: 100,
+  discoverPaginationZeroIndexed: false,
+  manualDiscoverResult: '',
+  discoverJsonDataField: '',
+  itemList: '',
   timeout: 30,
   rejectUnauthorized: true,
   disableTimeFilter: false,

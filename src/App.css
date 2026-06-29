@@ -441,6 +441,30 @@ select.form-control {
   margin-top: 0;
 }
 
+/* ─── Discovery section ─────────────────────────────────────────────────────── */
+.form-section-sub {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface-raised, rgba(255,255,255,0.03));
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.form-section-subtitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #8b949e);
+  margin: 0 0 0.6rem 0;
+}
+
+.form-control--mono {
+  font-family: var(--font-mono, 'Fira Code', 'Cascadia Code', monospace);
+  font-size: 0.8rem;
+  resize: vertical;
+}
+
 /* ─── Param Rows ─────────────────────────────────────────────────────────────── */
 .param-rows {
   display: flex;
