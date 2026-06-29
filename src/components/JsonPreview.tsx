@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 
 interface JsonPreviewProps {
   value: string;
@@ -6,26 +6,18 @@ interface JsonPreviewProps {
 }
 
 export function JsonPreview({ value, onChange }: JsonPreviewProps) {
-  const [error, setError] = useState<string | null>(null);
-  const [formatted, setFormatted] = useState(false);
-
-  useEffect(() => {
-    try {
-      JSON.parse(value);
-      setError(null);
-    } catch (e) {
-      setError((e as Error).message);
-    }
+  const error = useMemo<string | null>(() => {
+    try { JSON.parse(value); return null; }
+    catch (e) { return (e as Error).message; }
   }, [value]);
+  const [formatted, setFormatted] = useState(false);
 
   const handleChange = (text: string) => {
     setFormatted(false);
     try {
       const parsed = JSON.parse(text);
-      setError(null);
       onChange(text, parsed);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
       onChange(text, null);
     }
   };
@@ -36,7 +28,6 @@ export function JsonPreview({ value, onChange }: JsonPreviewProps) {
       const pretty = JSON.stringify(parsed, null, 2);
       onChange(pretty, parsed);
       setFormatted(true);
-      setError(null);
     } catch {
       // already showing error
     }

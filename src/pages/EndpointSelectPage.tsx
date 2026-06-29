@@ -24,6 +24,7 @@ export function EndpointSelectPage() {
     );
     if (match) {
       handleSelect(match, true);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPreserveBanner('found');
     } else {
       setPreserveBanner('not-found');

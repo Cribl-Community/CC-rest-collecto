@@ -223,6 +223,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useWizard(): WizardContextValue {
   const ctx = useContext(WizardContext);
   if (!ctx) throw new Error('useWizard must be used within WizardProvider');

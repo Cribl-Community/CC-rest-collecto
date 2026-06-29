@@ -1,12 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWizard } from '../context/WizardContext';
-import { getStoredModel, hasApiKey } from './SettingsPage';
+import { getStoredModel, hasApiKey } from '../utils/settings';
 import type { CollectorConfig, ScheduleConfig } from '../context/WizardContext';
 import { saveProject, loadProject, deriveProjectName } from '../utils/projectStorage';
 import type { ChatMessage } from '../utils/projectStorage';
-
-declare const CRIBL_API_URL: string;
 
 type Message = ChatMessage;
 
@@ -234,7 +232,7 @@ function MessageBubble({
 
   // Split content into text and json blocks for rendering
   const parts: Array<{ type: 'text' | 'json'; content: string; parsed?: object }> = [];
-  let remaining = msg.content;
+  const remaining = msg.content;
   const blockRe = /```json\s*([\s\S]*?)```/g;
   let lastIdx = 0;
   let match;
@@ -251,7 +249,6 @@ function MessageBubble({
   if (lastIdx < remaining.length) {
     parts.push({ type: 'text', content: remaining.slice(lastIdx) });
   }
-  remaining = ''; // suppress unused warning
 
   return (
     <div className={`chat-message chat-message--${isUser ? 'user' : 'assistant'}`}>
@@ -300,7 +297,7 @@ export function ChatPage() {
   const messages = chatMessages;
   // Keep a ref to the latest messages so async streaming callbacks never see stale closures
   const messagesRef = useRef<Message[]>(chatMessages);
-  messagesRef.current = chatMessages;
+  useEffect(() => { messagesRef.current = chatMessages; });
   const setMessages = (msgs: Message[] | ((prev: Message[]) => Message[])) => {
     const next = typeof msgs === 'function' ? msgs(messagesRef.current) : msgs;
     messagesRef.current = next;
@@ -456,7 +453,6 @@ export function ChatPage() {
   }
 
   async function handleLoad(json: object) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const raw = json as Record<string, unknown>;
     const result = parseSavedJob(raw);
     if (!result) return;

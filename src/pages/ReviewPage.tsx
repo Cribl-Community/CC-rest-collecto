@@ -47,6 +47,7 @@ export function ReviewPage() {
     if (!collectorConfig.collectUrl && !selectedOperation) return;
     const json = buildCollectorJson(effectiveOperation, collectorConfig, scheduleConfig);
     const text = JSON.stringify(json, null, 2);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setJsonText(text);
     setParsedJson(json);
     setPushId(id => id || collectorConfig.id);
@@ -54,11 +55,13 @@ export function ReviewPage() {
   }, [selectedOperation, collectorConfig, scheduleConfig]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPushId(collectorConfig.id);
   }, [collectorConfig.id]);
 
   useEffect(() => {
     if (!hasCriblApi) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setGroupsLoading(true);
     fetch(`${CRIBL_API_URL}/master/groups`)
       .then(r => r.json())
