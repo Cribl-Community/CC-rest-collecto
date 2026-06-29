@@ -1,6 +1,6 @@
 # REST Collecto
 
-REST Collecto is a Cribl App Platform application that helps you create and manage [Cribl REST Collector](https://docs.cribl.io/stream/collectors-rest/) configurations. Point it at an OpenAPI spec or describe your API in plain English, and it generates a complete, ready-to-push `SavedJob` configuration — no manual JSON editing required.
+REST Collecto is a Cribl App Platform application that helps you create and manage [Cribl REST Collector](https://docs.cribl.io/stream/collectors-rest/) configurations. Point it at an OpenAPI spec or describe your API in natural language, and it generates a complete, ready-to-push Collector configuration — no manual JSON editing required.
 
 ---
 
