@@ -13,6 +13,15 @@ REST Collecto is a Cribl App Platform application that helps you create and mana
 
 ---
 
+## Installation
+
+1. Go to the latest [release] (https://github.com/Cribl-Community/CC-rest-collecto/releases/latest).
+2. Under Assets, right click on the app .tgz file (the first entry) and copy the url.
+3. Log in to Cribl and then click on *Apps->View All*
+4. Click *Add App->Import from Url*.
+5. Paste the app url you copied to the clipboard.
+6. Click *Import*
+   
 ## Getting started
 
 ### First-time setup
