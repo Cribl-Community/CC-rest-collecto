@@ -32,7 +32,7 @@ REST Collecto is a Cribl App Platform application that helps you create and mana
    - **OpenAPI Spec** — paste or fetch a spec to use the guided wizard.
    - **AI Builder** — describe what you want to collect and let the LLM do the work.
 
-If you plan to use the AI Builder, go to **Settings** first and save your Anthropic API key and preferred model (e.g. `claude-3-5-sonnet-20241022`).
+If you plan to use the AI Builder, go to **Settings** first and configure your AI provider (Anthropic or AWS Bedrock) — see [AI Provider Setup](#ai-provider-setup) below.
 
 ---
 
@@ -73,6 +73,39 @@ Inspect the generated `SavedJob` JSON, then:
 - **Download** — save the file and import it manually in Cribl.
 - **Push** — send it directly to Cribl. You can rename the collector ID before pushing if needed.
 - **Save Project** — persist the configuration for later editing.
+
+---
+
+## AI Provider Setup
+
+The AI Builder supports two LLM providers. Go to **Settings** to configure your preferred one.
+
+### Anthropic
+
+Select **Anthropic** in the provider toggle, paste your API key, and choose a model. The key is stored in the Cribl KV store and injected by the platform proxy — it never appears in browser requests.
+
+| Model | Notes |
+|---|---|
+| Claude Sonnet 4.5 | Recommended — fast and capable |
+| Claude Opus 4.5 | Most capable, slower |
+| Claude Haiku 3.5 | Fastest, lighter tasks |
+
+Get a key at [console.anthropic.com](https://console.anthropic.com/settings/keys).
+
+### AWS Bedrock
+
+Select **AWS Bedrock** in the provider toggle, choose a region, and enter your IAM Access Key ID and Secret Access Key.
+
+| Model | Notes |
+|---|---|
+| Claude Sonnet 4.6 (Bedrock) | Recommended |
+| Claude Opus 4.6 (Bedrock) | Most capable |
+| Claude Sonnet 4.5 (Bedrock) | |
+| Claude Haiku 4.5 (Bedrock) | Fastest |
+
+**Supported regions:** `us-east-1`, `us-west-2`, `eu-west-1`, `eu-central-1`, `ap-northeast-1`, `ap-southeast-1`, `ap-southeast-2`
+
+The IAM user or role must have the `bedrock:InvokeModelWithResponseStream` permission. Credentials are stored in the Cribl KV store. Each request is signed with AWS SigV4 in the browser; the signed `Authorization` value is written to KV and injected by the Cribl platform proxy before the request reaches Bedrock — credentials are never sent directly from the browser.
 
 ---
 

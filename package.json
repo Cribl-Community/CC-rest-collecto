@@ -11,6 +11,7 @@
     "package": "npm run build && node scripts/package.mjs"
   },
   "dependencies": {
+    "@smithy/signature-v4": "^5.6.2",
     "@types/js-yaml": "^4.0.9",
     "js-yaml": "^4.2.0",
     "react": "^19.2.6",

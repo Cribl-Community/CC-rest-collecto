@@ -1,8 +1,44 @@
 declare const CRIBL_API_URL: string;
 
+// ── KV key paths ──────────────────────────────────────────────────────────────
 const KV_MODEL_PATH = 'anthropicModel';
 const KV_KEY_PATH = 'anthropicApiKey';
+const KV_PROVIDER_PATH = 'aiProvider';
+const KV_BEDROCK_REGION_PATH = 'bedrockRegion';
+const KV_BEDROCK_ACCESS_KEY_PATH = 'bedrockAccessKeyId';
+const KV_BEDROCK_SECRET_KEY_PATH = 'bedrockSecretAccessKey';
 
+function kvUrl(path: string) {
+  return `${CRIBL_API_URL}/kvstore/${path}`;
+}
+
+async function kvGet(path: string): Promise<string> {
+  try {
+    const r = await fetch(kvUrl(path));
+    if (!r.ok) return '';
+    return (await r.text()).trim();
+  } catch {
+    return '';
+  }
+}
+
+async function kvPut(path: string, value: string): Promise<boolean> {
+  try {
+    const r = await fetch(kvUrl(path), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'text/plain' },
+      body: value,
+    });
+    return r.ok;
+  } catch {
+    return false;
+  }
+}
+
+// ── AI Provider ───────────────────────────────────────────────────────────────
+export type AIProvider = 'anthropic' | 'bedrock';
+
+// ── Anthropic ─────────────────────────────────────────────────────────────────
 export const ANTHROPIC_MODELS = [
   { id: 'claude-sonnet-4-5', label: 'Claude Sonnet 4.5 (Recommended)' },
   { id: 'claude-opus-4-5', label: 'Claude Opus 4.5 (Most capable)' },
@@ -11,23 +47,14 @@ export const ANTHROPIC_MODELS = [
 
 export const DEFAULT_MODEL = ANTHROPIC_MODELS[0].id;
 
-function kvUrl(path: string) {
-  return `${CRIBL_API_URL}/kvstore/${path}`;
-}
-
 export async function getStoredModel(): Promise<string> {
+  const text = await kvGet(KV_MODEL_PATH);
+  // Normalize: handle legacy values stored JSON-encoded ("claude-sonnet-4-5")
   try {
-    const r = await fetch(kvUrl(KV_MODEL_PATH));
-    if (!r.ok) return DEFAULT_MODEL;
-    const text = (await r.text()).trim();
-    try {
-      const parsed = JSON.parse(text);
-      return typeof parsed === 'string' ? parsed : DEFAULT_MODEL;
-    } catch {
-      return text || DEFAULT_MODEL;
-    }
+    const parsed = JSON.parse(text);
+    return typeof parsed === 'string' ? parsed : DEFAULT_MODEL;
   } catch {
-    return DEFAULT_MODEL;
+    return text || DEFAULT_MODEL;
   }
 }
 
@@ -38,4 +65,68 @@ export async function hasApiKey(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+// ── AWS Bedrock ────────────────────────────────────────────────────────────────
+export const BEDROCK_MODELS = [
+  { id: 'us.anthropic.claude-opus-4-6-v1', label: 'Claude Opus 4.6 (Bedrock)' },
+  { id: 'us.anthropic.claude-sonnet-4-6', label: 'Claude Sonnet 4.6 (Bedrock)' },
+  { id: 'us.anthropic.claude-sonnet-4-5-20250929-v1:0', label: 'Claude Sonnet 4.5 (Bedrock)' },
+  { id: 'us.anthropic.claude-haiku-4-5-20251001-v1:0', label: 'Claude Haiku 4.5 (Bedrock)' },
+];
+
+export const DEFAULT_BEDROCK_MODEL = 'us.anthropic.claude-sonnet-4-6';
+
+export const BEDROCK_REGIONS = [
+  'us-east-1',
+  'us-west-2',
+  'eu-west-1',
+  'eu-central-1',
+  'ap-northeast-1',
+  'ap-southeast-1',
+  'ap-southeast-2',
+];
+
+export async function getStoredProvider(): Promise<AIProvider> {
+  const text = await kvGet(KV_PROVIDER_PATH);
+  return text === 'bedrock' ? 'bedrock' : 'anthropic';
+}
+
+export async function saveProvider(provider: AIProvider): Promise<void> {
+  await kvPut(KV_PROVIDER_PATH, provider);
+}
+
+export interface BedrockCreds {
+  region: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+}
+
+export async function getStoredBedrockCreds(): Promise<BedrockCreds> {
+  const [region, accessKeyId, secretAccessKey] = await Promise.all([
+    kvGet(KV_BEDROCK_REGION_PATH),
+    kvGet(KV_BEDROCK_ACCESS_KEY_PATH),
+    kvGet(KV_BEDROCK_SECRET_KEY_PATH),
+  ]);
+  return {
+    region: region || 'us-east-1',
+    accessKeyId,
+    secretAccessKey,
+  };
+}
+
+export async function saveBedrockCreds(region: string, accessKeyId: string, secretAccessKey: string): Promise<void> {
+  await Promise.all([
+    kvPut(KV_BEDROCK_REGION_PATH, region),
+    kvPut(KV_BEDROCK_ACCESS_KEY_PATH, accessKeyId),
+    kvPut(KV_BEDROCK_SECRET_KEY_PATH, secretAccessKey),
+  ]);
+}
+
+export async function hasBedrockCreds(): Promise<boolean> {
+  const [accessKeyId, secretAccessKey] = await Promise.all([
+    kvGet(KV_BEDROCK_ACCESS_KEY_PATH),
+    kvGet(KV_BEDROCK_SECRET_KEY_PATH),
+  ]);
+  return accessKeyId.length > 0 && secretAccessKey.length > 0;
 }
