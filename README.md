@@ -4,6 +4,8 @@ REST Collecto is a Cribl App Platform application that helps you create and mana
 
 ---
 
+<img width="1494" height="987" alt="Screenshot 2026-07-08 at 7 47 24 PM" src="https://github.com/user-attachments/assets/80c01f50-17f8-43f5-bc1e-249cc12e1217" />
+
 ## What it does
 
 - **Wizard** — Import an OpenAPI spec (JSON or YAML, file or URL), pick an endpoint, and fill in a guided form. The wizard pre-fills fields from the spec: URL, HTTP method, query parameters, headers, and any enum values show up as dropdowns.
