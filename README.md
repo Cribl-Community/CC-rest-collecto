@@ -2,8 +2,6 @@
 
 REST Collecto is a Cribl App Platform application that helps you create and manage [Cribl REST Collector](https://docs.cribl.io/stream/collectors-rest/) configurations. Point it at an OpenAPI spec or describe your API in natural language, and it generates a complete, ready-to-push Collector configuration — no manual JSON editing required.
 
----
-
 <img width="1494" height="987" alt="Screenshot 2026-07-08 at 7 47 24 PM" src="https://github.com/user-attachments/assets/80c01f50-17f8-43f5-bc1e-249cc12e1217" />
 
 ## What it does
