@@ -17,9 +17,10 @@ REST Collecto is a Cribl App Platform application that helps you create and mana
 
 1. Log in to Cribl and then click on **Apps->View All**
 2. Click **Add App->Import from Git**.
-3. Paste the repo url and tag (make sure to include the v).
+3. Find the latest release tag, this is the latest release number under Releases.
+3. Paste the repo url and release tag (make sure to include the v).
 4. Click **Import**.
-   
+
 ## Getting started
 
 ### First-time setup
