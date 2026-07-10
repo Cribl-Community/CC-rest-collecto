@@ -2,11 +2,12 @@ declare const CRIBL_API_URL: string;
 
 // ── KV key paths ──────────────────────────────────────────────────────────────
 const KV_MODEL_PATH = 'anthropicModel';
-const KV_KEY_PATH = 'anthropicApiKey';
+const KV_ANTHROPIC_KEY_SET_PATH = 'anthropicApiKeySet';
 const KV_PROVIDER_PATH = 'aiProvider';
 const KV_BEDROCK_REGION_PATH = 'bedrockRegion';
 const KV_BEDROCK_ACCESS_KEY_PATH = 'bedrockAccessKeyId';
 const KV_BEDROCK_SECRET_KEY_PATH = 'bedrockSecretAccessKey';
+const KV_BEDROCK_CREDS_SET_PATH = 'bedrockCredsSet';
 
 function kvUrl(path: string) {
   return `${CRIBL_API_URL}/kvstore/${path}`;
@@ -35,6 +36,27 @@ async function kvPut(path: string, value: string): Promise<boolean> {
   }
 }
 
+async function kvPutEncrypted(path: string, value: string): Promise<boolean> {
+  try {
+    const r = await fetch(kvUrl(path) + '?encrypted=true', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'text/plain' },
+      body: value,
+    });
+    return r.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function kvDelete(path: string): Promise<void> {
+  try {
+    await fetch(kvUrl(path), { method: 'DELETE' });
+  } catch {
+    // best-effort
+  }
+}
+
 // ── AI Provider ───────────────────────────────────────────────────────────────
 export type AIProvider = 'anthropic' | 'bedrock';
 
@@ -59,12 +81,8 @@ export async function getStoredModel(): Promise<string> {
 }
 
 export async function hasApiKey(): Promise<boolean> {
-  try {
-    const r = await fetch(kvUrl(KV_KEY_PATH));
-    return r.ok;
-  } catch {
-    return false;
-  }
+  const text = await kvGet(KV_ANTHROPIC_KEY_SET_PATH);
+  return text === 'true';
 }
 
 // ── AWS Bedrock ────────────────────────────────────────────────────────────────
@@ -118,15 +136,21 @@ export async function getStoredBedrockCreds(): Promise<BedrockCreds> {
 export async function saveBedrockCreds(region: string, accessKeyId: string, secretAccessKey: string): Promise<void> {
   await Promise.all([
     kvPut(KV_BEDROCK_REGION_PATH, region),
-    kvPut(KV_BEDROCK_ACCESS_KEY_PATH, accessKeyId),
-    kvPut(KV_BEDROCK_SECRET_KEY_PATH, secretAccessKey),
+    kvPutEncrypted(KV_BEDROCK_ACCESS_KEY_PATH, accessKeyId),
+    kvPutEncrypted(KV_BEDROCK_SECRET_KEY_PATH, secretAccessKey),
+    kvPut(KV_BEDROCK_CREDS_SET_PATH, 'true'),
+  ]);
+}
+
+export async function clearBedrockCreds(): Promise<void> {
+  await Promise.all([
+    kvDelete(KV_BEDROCK_ACCESS_KEY_PATH),
+    kvDelete(KV_BEDROCK_SECRET_KEY_PATH),
+    kvDelete(KV_BEDROCK_CREDS_SET_PATH),
   ]);
 }
 
 export async function hasBedrockCreds(): Promise<boolean> {
-  const [accessKeyId, secretAccessKey] = await Promise.all([
-    kvGet(KV_BEDROCK_ACCESS_KEY_PATH),
-    kvGet(KV_BEDROCK_SECRET_KEY_PATH),
-  ]);
-  return accessKeyId.length > 0 && secretAccessKey.length > 0;
+  const text = await kvGet(KV_BEDROCK_CREDS_SET_PATH);
+  return text === 'true';
 }

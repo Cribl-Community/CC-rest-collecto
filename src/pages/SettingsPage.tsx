@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   ANTHROPIC_MODELS, DEFAULT_MODEL, getStoredModel, hasApiKey,
   BEDROCK_MODELS, DEFAULT_BEDROCK_MODEL, BEDROCK_REGIONS,
-  getStoredProvider, saveProvider, getStoredBedrockCreds, saveBedrockCreds, hasBedrockCreds,
+  getStoredProvider, saveProvider, getStoredBedrockCreds, saveBedrockCreds, clearBedrockCreds, hasBedrockCreds,
   type AIProvider,
 } from '../utils/settings';
 
@@ -70,11 +70,16 @@ export function SettingsPage() {
     setSaving(true);
     setSaveStatus('idle');
     try {
-      const [keyRes, modelRes] = await Promise.all([
-        fetch(kvUrl(KV_KEY_PATH), {
+      const [keyRes, sentinelRes, modelRes] = await Promise.all([
+        fetch(kvUrl(KV_KEY_PATH) + '?encrypted=true', {
           method: 'PUT',
           headers: { 'Content-Type': 'text/plain' },
           body: keyInput.trim(),
+        }),
+        fetch(kvUrl('anthropicApiKeySet'), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'text/plain' },
+          body: 'true',
         }),
         fetch(kvUrl(KV_MODEL_PATH), {
           method: 'PUT',
@@ -82,7 +87,7 @@ export function SettingsPage() {
           body: anthropicModel,
         }),
       ]);
-      if (!keyRes.ok || !modelRes.ok) throw new Error('Failed to save settings.');
+      if (!keyRes.ok || !sentinelRes.ok || !modelRes.ok) throw new Error('Failed to save settings.');
       setKeyConfigured(true);
       setKeyInput('');
       setSaveStatus('success');
@@ -116,7 +121,10 @@ export function SettingsPage() {
   async function handleClearAnthropicKey() {
     setSaving(true);
     try {
-      await fetch(kvUrl(KV_KEY_PATH), { method: 'DELETE' });
+      await Promise.all([
+        fetch(kvUrl(KV_KEY_PATH), { method: 'DELETE' }),
+        fetch(kvUrl('anthropicApiKeySet'), { method: 'DELETE' }),
+      ]);
       setKeyConfigured(false);
       setSaveStatus('success');
       setSaveMessage('API key removed.');
@@ -170,7 +178,7 @@ export function SettingsPage() {
   async function handleClearBedrockCreds() {
     setSaving(true);
     try {
-      await saveBedrockCreds(bedrockRegion, '', '');
+      await clearBedrockCreds();
       setBedrockConfigured(false);
       setSaveStatus('success');
       setSaveMessage('Bedrock credentials removed.');
